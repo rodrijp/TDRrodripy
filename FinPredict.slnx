@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FinPredictConsola/FinPredictConsola.csproj" />
+    <Project Path="src/FinPredictCore/FinPredictCore.csproj" />
+  </Folder>
+</Solution>

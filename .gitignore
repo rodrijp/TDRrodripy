@@ -1,0 +1,71 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.userprefs
+*.DotSettings.user
+*.csproj.user
+*.dbmdl
+*.jfm
+*.vs/
+packages/
+*.nupkg
+
+# .NET Core
+project.lock.json
+project.assets.json
+*.lock.json
+.DS_Store
+
+# NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/packages/*/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.sln.ide/
+*.opendb
+*.VC.db
+*.VC.opendb
+*.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+*.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Testing
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Node (if using NPM for client-side)
+node_modules/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
