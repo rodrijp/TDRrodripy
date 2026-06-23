@@ -60,7 +60,7 @@ static void ProcesarArchivo(string ruta)
 
     var lineasSalida = new List<string> { cabecera };
     lineasSalida.AddRange(
-        seleccionados.Select(d => $"{d.fecha:MM/dd/yyyy},{d.valor}"));
+        seleccionados.Select(d => $"{d.fecha:MM/dd/yyyy},{d.valor.ToString(CultureInfo.InvariantCulture)}"));
 
     File.WriteAllText(salida, string.Join(Environment.NewLine, lineasSalida));
     Console.WriteLine($"Creado: {Path.GetFileName(salida)}");
