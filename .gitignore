@@ -12,6 +12,7 @@ obj/
 *.vs/
 packages/
 *.nupkg
+appsettings.json
 
 # .NET Core
 project.lock.json

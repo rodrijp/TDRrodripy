@@ -2,10 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FinPredictCore\FinPredictCore.csproj" />
+    <ProjectReference Include="..\FinPredictData\FinPredictData.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
   </ItemGroup>
 
   <ItemGroup>

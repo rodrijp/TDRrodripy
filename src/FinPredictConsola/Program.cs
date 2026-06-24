@@ -1,4 +1,5 @@
-﻿using FinPredictCore.Fuentes;
+﻿using FinPredictData.Context;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 var config = new ConfigurationBuilder()
@@ -6,8 +7,22 @@ var config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .Build();
 
-var connectionString = config.GetConnectionString("TDRMercatDB");
-Console.ReadKey();
+var optionsBuilder = new DbContextOptionsBuilder<TDRMercatContext>();
+optionsBuilder.UseNpgsql(config.GetConnectionString("TDRMercatDB"));
+
+using var context = new TDRMercatContext(optionsBuilder.Options);
+
+Console.WriteLine("=== Tabla Source ===");
+foreach (var source in context.Sources)
+{
+    Console.WriteLine($"{source.SourceId} - {source.SourceName}");
+}
+
+Console.WriteLine("\n=== Tabla Data ===");
+foreach (var datum in context.Data)
+{
+    Console.WriteLine($"{datum.DataId} - {datum.DataName}");
+}
 /*
 var folderPath = @"c:\tdr\trabajo";
 //var folderPath = args.Length > 0 ? args[0] : PedirCarpeta();
