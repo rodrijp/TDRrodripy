@@ -8,7 +8,6 @@ var config = new ConfigurationBuilder()
 
 var connectionString = config.GetConnectionString("TDRMercatDB");
 Console.ReadKey();
-
 /*
 var folderPath = @"c:\tdr\trabajo";
 //var folderPath = args.Length > 0 ? args[0] : PedirCarpeta();
