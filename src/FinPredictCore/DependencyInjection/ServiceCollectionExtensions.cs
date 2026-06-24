@@ -1,4 +1,8 @@
 // MiSolucion.Compartido/DependencyInjection/ServiceCollectionExtensions.cs
+using FinPredictCore.Service.HistoricalData;
+using FinPredictData.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -12,7 +16,15 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddSharedServices(this IServiceCollection services)
     {
-        // Registrar los Keyed Services        
+        services.AddDbContext<TDRMercatContext>((serviceProvider, options) =>
+        {
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("TDRMercatDB");
+            options.UseNpgsql(connectionString);
+        });
+
+        services.AddScoped<IHistoricalDataService, HistoricalDataService>();
+
         return services;
     }
 

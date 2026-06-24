@@ -11,6 +11,7 @@ using var host = builder.Build();
 using (var scope = host.Services.CreateScope())
 {
     Console.WriteLine("=== Iniciando la aplicación ===");
+    
 }
 
 await host.RunAsync();
