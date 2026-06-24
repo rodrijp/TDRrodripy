@@ -1,4 +1,20 @@
-﻿using FinPredictData.Context;
+﻿// AppConsola1/Program.cs
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using FinPredictCore.DependencyInjection;
+
+// ✅ USAR EL BUILDER COMPARTIDO - Así de simple!
+var builder = ServiceCollectionExtensions.CreateSharedHostBuilder(args);
+
+using var host = builder.Build();
+
+using (var scope = host.Services.CreateScope())
+{
+    Console.WriteLine("=== Iniciando la aplicación ===");
+}
+
+await host.RunAsync();
+/*using FinPredictData.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -22,7 +38,7 @@ Console.WriteLine("\n=== Tabla Data ===");
 foreach (var datum in context.Data)
 {
     Console.WriteLine($"{datum.DataId} - {datum.DataName}");
-}
+}*/
 /*
 var folderPath = @"c:\tdr\trabajo";
 //var folderPath = args.Length > 0 ? args[0] : PedirCarpeta();
