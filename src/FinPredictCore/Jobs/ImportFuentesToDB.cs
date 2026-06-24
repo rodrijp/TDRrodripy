@@ -1,4 +1,6 @@
+using System.IO;
 using Microsoft.Extensions.Configuration;
+using FinPredictCore.Fuentes;
 
 namespace FinPredictCore.Jobs;
 
@@ -15,7 +17,14 @@ public class ImportFuentesToDB : IImportFuentesToDB
     {
         // Obtener el path de trabajo desde appsettings.json
         var workPath = _configuration["WorkingDirectories:Temporary"];
+        if (string.IsNullOrWhiteSpace(workPath)) return;
 
-        // Por ahora no hacemos nada con workPath (no-op)
+        var source = Path.Combine(workPath, "ORO.csv");
+        if (!File.Exists(source)) return;
+
+        var dest = Path.Combine(workPath, "ORO.cleaned.csv");
+
+        var cleaner = new Macrotrends();
+        cleaner.LimpiarCSV(source, dest);
     }
 }
