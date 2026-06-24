@@ -1,5 +1,14 @@
 ﻿using FinPredictCore.Fuentes;
+using Microsoft.Extensions.Configuration;
 
+var config = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
+
+var connectionString = config.GetConnectionString("TDRMercatDB");
+Console.ReadKey();
+/*
 var folderPath = @"c:\tdr\trabajo";
 //var folderPath = args.Length > 0 ? args[0] : PedirCarpeta();
 
@@ -33,3 +42,4 @@ static string PedirCarpeta()
     Console.Write("Introduce la ruta de la carpeta: ");
     return Console.ReadLine() ?? "";
 }
+*/
