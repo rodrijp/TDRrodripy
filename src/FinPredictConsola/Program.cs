@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FinPredictCore.DependencyInjection;
+using FinPredictCore.Jobs;
 
 // ✅ USAR EL BUILDER COMPARTIDO - Así de simple!
 var builder = ServiceCollectionExtensions.CreateSharedHostBuilder(args);
@@ -11,8 +12,8 @@ using var host = builder.Build();
 using (var scope = host.Services.CreateScope())
 {
     Console.WriteLine("=== Iniciando la aplicación ===");
-    var a = new FinPredictCore.Fuentes.Macrotrends();
-    await a.DownloadCSVAsync("https://www.macrotrends.net/1333/historical-gold-prices-100-year-chart", "c:\\tdr\\a.csv");
+    var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
+    importer.Do();
 }
 
 await host.RunAsync();

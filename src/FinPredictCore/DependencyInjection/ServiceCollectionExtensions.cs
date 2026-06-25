@@ -1,4 +1,5 @@
 // MiSolucion.Compartido/DependencyInjection/ServiceCollectionExtensions.cs
+using FinPredictCore.Jobs;
 using FinPredictCore.Service.HistoricalData;
 using FinPredictData.Context;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<IHistoricalDataService, HistoricalDataService>();
+        services.AddScoped<IImportFuentesToDB, ImportFuentesToDB>();
 
         return services;
     }
