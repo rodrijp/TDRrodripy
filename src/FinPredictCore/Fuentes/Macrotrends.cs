@@ -1,9 +1,13 @@
 using System.Globalization;
+using Microsoft.Playwright;
 
 namespace FinPredictCore.Fuentes;
 
 public class Macrotrends
 {
+
+    
+
     public void LimpiarCSV(string rutaOrigen, string rutaDestino)
     {
         var lineas = File.ReadAllLines(rutaOrigen);
@@ -35,5 +39,58 @@ public class Macrotrends
             seleccionados.Select(d => $"{d.fecha:MM/dd/yyyy},{d.valor.ToString(CultureInfo.InvariantCulture)}"));
 
         File.WriteAllText(rutaDestino, string.Join(Environment.NewLine, lineasSalida));
+    }
+
+    public async Task DownloadCSVAsync(string url, string rutaDestino)
+    {
+        var playwright = await Playwright.CreateAsync();
+        var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+        
+        // Configurar contexto para aceptar descargas
+        var context = await browser.NewContextAsync(new BrowserNewContextOptions 
+        { 
+            AcceptDownloads = true
+        });
+        
+        var page = await context.NewPageAsync();
+
+        try
+        {
+            await page.GotoAsync(url);
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            // Hacer click en el icono de exportar para descargar
+            var exportIcon = page.Locator("g:has-text(\"Download Data\")").First;
+            var iconCount = await page.Locator("g:has-text(\"Download Data\")").CountAsync();
+            Console.WriteLine($"INFO: Found {iconCount} export icons");
+            
+            await exportIcon.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+            await exportIcon.ScrollIntoViewIfNeededAsync();
+
+            // Iniciar espera de descarga ANTES del click
+            var downloadTask = page.WaitForDownloadAsync();
+            
+            // Hacer click para descargar
+            await exportIcon.ClickAsync(new LocatorClickOptions { Force = true });
+            
+            // Esperar a que se complete la descarga
+            var download = await downloadTask;
+
+            // Guardar el archivo en la ruta destino
+            await download.SaveAsAsync(rutaDestino);
+            Console.WriteLine($"INFO: Archivo descargado exitosamente a {rutaDestino}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("ERROR en DownloadCSVAsync:");
+            Console.WriteLine(ex);
+            throw;
+        }
+        finally
+        {
+            await page.CloseAsync();
+            await context.CloseAsync();
+            await browser.CloseAsync();
+        }
     }
 }
