@@ -1,33 +1,58 @@
 using System.Globalization;
 using System.IO;
+using FinPredictCore.Configuration;
 using FinPredictCore.Fuentes;
+using FinPredictCore.Service.Data;
 using FinPredictCore.Service.HistoricalData;
+using FinPredictCore.Service.Source;
 using FinPredictData.Models;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace FinPredictCore.Jobs;
 
 public class ImportFuentesToDB : IImportFuentesToDB
 {
-    private readonly IConfiguration _configuration;
+    private readonly WorkingDirectoriesOptions _workingDirectories;
     private readonly IHistoricalDataService _historicalDataService;
+    private readonly IDataService _dataService;
 
-    public ImportFuentesToDB(IConfiguration configuration, IHistoricalDataService historicalDataService)
+    public ImportFuentesToDB(IOptions<WorkingDirectoriesOptions> workingDirectoriesOptions, IHistoricalDataService historicalDataService, IDataService dataService)
     {
-        _configuration = configuration;
+        _workingDirectories = workingDirectoriesOptions.Value;
         _historicalDataService = historicalDataService;
+        _dataService = dataService;
     }
 
     public void Do()
     {
-        // Obtener el path de trabajo desde appsettings.json
-        var workPath = _configuration["WorkingDirectories:Temporary"];
+        ImportFuenteMacrotrendsToDB();
+    }
+
+    private void ImportFuenteMacrotrendsToDB()
+    {
+        var workPath = _workingDirectories.Temporary;
         if (string.IsNullOrWhiteSpace(workPath)) return;
 
-        var source = Path.Combine(workPath, "ORO.csv");
-        if (!File.Exists(source)) return;
 
-        var dest = Path.Combine(workPath, "ORO.cleaned.csv");
+        var datos = _dataService.GetAllDatumsBySource(SourceUtil.SourceMacrotrends);
+
+        foreach (var dato in datos)
+        {
+            if (string.IsNullOrWhiteSpace(dato.DataName)) continue;
+
+
+
+            var source = Path.Combine(workPath, $"{dato.DataName}.csv");
+            ImportarArchivo(source, dato.DataId);
+        }
+    }
+
+    private void ImportarArchivo(string source, short dataId)
+    {
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        var dest = Path.Combine(Path.GetDirectoryName(source), Path.GetFileNameWithoutExtension(source) + ".cleaned.csv");
+#pragma warning restore CS8604 // Possible null reference argument.
 
         var cleaner = new Macrotrends();
         cleaner.LimpiarCSV(source, dest);
@@ -55,7 +80,7 @@ public class ImportFuentesToDB : IImportFuentesToDB
             var historicalDatum = new HistoricalDatum
             {
                 Date = fecha,
-                DataId = 1,
+                DataId = dataId,
                 Value = (float)valorDecimal
             };
 

@@ -41,6 +41,8 @@ public class Macrotrends
         File.WriteAllText(rutaDestino, string.Join(Environment.NewLine, lineasSalida));
     }
 
+    /*
+    Doesn't work because the download is triggered by a click event, and Macrotrends probably protecte the download link from direct access. 
     public async Task DownloadCSVAsync(string url, string rutaDestino)
     {
         var playwright = await Playwright.CreateAsync();
@@ -92,5 +94,7 @@ public class Macrotrends
             await context.CloseAsync();
             await browser.CloseAsync();
         }
+
     }
+*/
 }

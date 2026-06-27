@@ -1,5 +1,7 @@
 // MiSolucion.Compartido/DependencyInjection/ServiceCollectionExtensions.cs
+using FinPredictCore.Configuration;
 using FinPredictCore.Jobs;
+using FinPredictCore.Service.Data;
 using FinPredictCore.Service.HistoricalData;
 using FinPredictData.Context;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +27,16 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<IHistoricalDataService, HistoricalDataService>();
+        services.AddScoped<IDataService, DataService>();
         services.AddScoped<IImportFuentesToDB, ImportFuentesToDB>();
 
         return services;
+    }
+
+    public static IServiceCollection AddSharedServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<WorkingDirectoriesOptions>(configuration.GetSection("WorkingDirectories"));
+        return services.AddSharedServices();
     }
 
     /// <summary>
@@ -54,7 +63,7 @@ public static class ServiceCollectionExtensions
             .ConfigureServices((context, services) =>
             {
                 // Agregar servicios compartidos
-                services.AddSharedServices();
+                services.AddSharedServices(context.Configuration);
                 services.AddSharedLogging();
                 
                 // Aquí puedes agregar más configuraciones compartidas
