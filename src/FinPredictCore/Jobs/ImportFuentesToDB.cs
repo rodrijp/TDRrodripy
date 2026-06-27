@@ -30,50 +30,86 @@ public class ImportFuentesToDB : IImportFuentesToDB
 
     private void ImportFuenteMacrotrendsToDB()
     {
-        var workPath = _workingDirectories.Temporary;
-        if (string.IsNullOrWhiteSpace(workPath)) return;
-
+        Console.WriteLine("[ImportFuentesToDB] Iniciant importació de fonts de Macrotrends...");
+        var dataPath = _workingDirectories.Data;
+        var tempPath = _workingDirectories.Temporary;
+        if (string.IsNullOrWhiteSpace(dataPath) || string.IsNullOrWhiteSpace(tempPath))
+        {
+            Console.WriteLine("[ImportFuentesToDB] Error: camins no configurats correctament.");
+            return;
+        }
 
         var datos = _dataService.GetAllDatumsBySource(SourceUtil.SourceMacrotrends);
+        Console.WriteLine($"[ImportFuentesToDB] S'han trobat {datos.Count()} fonts per importar.");
 
         foreach (var dato in datos)
         {
             if (string.IsNullOrWhiteSpace(dato.DataName)) continue;
 
+            var source = Path.Combine(dataPath, $"{dato.DataName}.csv");
+            Console.WriteLine($"[ImportFuentesToDB] Processant: {dato.DataName}");
+            ImportarArchivo(source, dato.DataId, tempPath);
+        }
 
+        Console.WriteLine("[ImportFuentesToDB] Importació completada. Netejant arxius temporals...");
+        // Limpiar los archivos procesados de Temporary
+        CleanupTempFiles(tempPath);
+        Console.WriteLine("[ImportFuentesToDB] Procés finalitzat.");
+    }
 
-            var source = Path.Combine(workPath, $"{dato.DataName}.csv");
-            ImportarArchivo(source, dato.DataId);
+    private void CleanupTempFiles(string tempPath)
+    {
+        var cleanedFiles = Directory.GetFiles(tempPath, "*.cleaned.csv");
+        Console.WriteLine($"[ImportFuentesToDB] Suprimint {cleanedFiles.Length} arxius temporals...");
+        foreach (var file in cleanedFiles)
+        {
+            File.Delete(file);
+            Console.WriteLine($"[ImportFuentesToDB] Suprimit: {Path.GetFileName(file)}");
         }
     }
 
-    private void ImportarArchivo(string source, short dataId)
+    private void ImportarArchivo(string source, short dataId, string tempPath)
     {
-
-#pragma warning disable CS8604 // Possible null reference argument.
-        var dest = Path.Combine(Path.GetDirectoryName(source), Path.GetFileNameWithoutExtension(source) + ".cleaned.csv");
-#pragma warning restore CS8604 // Possible null reference argument.
+        Console.WriteLine($"[ImportarArchivo] Netejant arxiu: {Path.GetFileName(source)}");
+        var dest = Path.Combine(tempPath, Path.GetFileNameWithoutExtension(source) + ".cleaned.csv");
 
         var cleaner = new Macrotrends();
         cleaner.LimpiarCSV(source, dest);
 
-        if (!File.Exists(dest)) return;
+        if (!File.Exists(dest))
+        {
+            Console.WriteLine($"[ImportarArchivo] Error: arxiu net no generat per a {Path.GetFileName(source)}");
+            return;
+        }
 
         var lineas = File.ReadAllLines(dest);
-        if (lineas.Length < 2) return;
+        if (lineas.Length < 2)
+        {
+            Console.WriteLine($"[ImportarArchivo] Error: arxiu buit o amb format invàlid a {Path.GetFileName(dest)}");
+            return;
+        }
+
+        var registrosValidos = 0;
+        var registrosInvalidos = 0;
 
         for (var i = 1; i < lineas.Length; i++)
         {
             var partes = lineas[i].Split(',');
-            if (partes.Length < 2) continue;
+            if (partes.Length < 2)
+            {
+                registrosInvalidos++;
+                continue;
+            }
 
             if (!DateOnly.TryParseExact(partes[0].Trim(), "MM/dd/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
             {
+                registrosInvalidos++;
                 continue;
             }
 
             if (!decimal.TryParse(partes[1].Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var valorDecimal))
             {
+                registrosInvalidos++;
                 continue;
             }
 
@@ -85,6 +121,9 @@ public class ImportFuentesToDB : IImportFuentesToDB
             };
 
             _historicalDataService.CreateOrUpdate(historicalDatum).GetAwaiter().GetResult();
+            registrosValidos++;
         }
+
+        Console.WriteLine($"[ImportarArchivo] Completat: {registrosValidos} registres importats, {registrosInvalidos} registres descartats.");
     }
 }
