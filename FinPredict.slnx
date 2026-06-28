@@ -3,5 +3,6 @@
     <Project Path="src/FinPredictConsola/FinPredictConsola.csproj" />
     <Project Path="src/FinPredictCore/FinPredictCore.csproj" />
     <Project Path="src/FinPredictData/FinPredictData.csproj" />
+    <Project Path="src/FinPredictWebApi/FinPredictWebApi.csproj" />
   </Folder>
 </Solution>
