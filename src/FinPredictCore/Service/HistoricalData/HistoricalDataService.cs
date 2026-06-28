@@ -38,8 +38,9 @@ public class HistoricalDataService : IHistoricalDataService
 
     public async Task<List<HistoricalDatum>> GetHistoricalDataByData(short dataId)
     {
-        return await _context.HistoricalData
+        return await _context.HistoricalData.AsNoTracking()
             .Where(x => x.DataId == dataId)
+            .OrderBy(x=> x.Date)
             .ToListAsync();
     }
 }

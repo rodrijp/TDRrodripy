@@ -12,8 +12,10 @@ using var host = builder.Build();
 using (var scope = host.Services.CreateScope())
 {
     Console.WriteLine("=== Iniciando la aplicación ===");
-    var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
-    importer.Do();
+    /*var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
+    await importer.Do();*/
+    var importer = scope.ServiceProvider.GetRequiredService<ICreateDataRelation>();
+    await importer.Do();
 }
 
 await host.RunAsync();

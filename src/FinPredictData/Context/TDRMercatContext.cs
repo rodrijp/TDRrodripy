@@ -43,6 +43,7 @@ public partial class TDRMercatContext : DbContext
 
             entity.Property(e => e.DataId).ValueGeneratedNever();
             entity.Property(e => e.DataName).HasMaxLength(256);
+            entity.Property(e => e.IsValue).HasDefaultValue(true);
             entity.Property(e => e.SourceAccess).HasColumnType("xml");
 
             entity.HasOne(d => d.Source).WithMany(p => p.Data)
