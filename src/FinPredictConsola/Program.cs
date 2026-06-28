@@ -1,11 +1,24 @@
 ﻿// AppConsola1/Program.cs
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using FinPredictCore.DependencyInjection;
 using FinPredictCore.Jobs;
 
 // ✅ USAR EL BUILDER COMPARTIDO - Así de simple!
 var builder = ServiceCollectionExtensions.CreateSharedHostBuilder(args);
+
+
+builder.ConfigureLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddSimpleConsole(options =>
+    {
+        options.SingleLine = true;
+        options.TimestampFormat = "HH:mm:ss ";
+    });
+    logging.SetMinimumLevel(LogLevel.Warning); // Minimo porque sino el ef muestra demasiada información
+});
 
 using var host = builder.Build();
 

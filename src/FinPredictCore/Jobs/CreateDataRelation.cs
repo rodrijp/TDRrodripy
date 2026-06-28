@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FinPredictCore.Service.Data;
+using FinPredictCore.Service.DataRelation;
 using FinPredictCore.Service.HistoricalData;
 using MathNet.Numerics.Statistics;
-using FinPredictData.Context;
 using FinPredictData.Models;
 
 namespace FinPredictCore.Jobs
@@ -14,15 +15,60 @@ namespace FinPredictCore.Jobs
     public class CreateDataRelation : ICreateDataRelation
     {
         private readonly IHistoricalDataService _historicalDataService;
+        private readonly IDataService _dataService;
+        private readonly IDataRelationService _dataRelationService;
 
-        public CreateDataRelation(IHistoricalDataService historicalDataService)
+        public CreateDataRelation(
+            IHistoricalDataService historicalDataService,
+            IDataService dataService,
+            IDataRelationService dataRelationService)
         {
             _historicalDataService = historicalDataService;
+            _dataService = dataService;
+            _dataRelationService = dataRelationService;
         }
 
         public async Task Do()
         {
-            var correlation = await CalculaCorrelación(1,2);
+            var datums = _dataService.GetAllDatums().ToList();
+            Console.WriteLine($"Iniciando cálculo de correlaciones para {datums.Count} variables...");
+
+            foreach(var datum1 in datums)
+            {
+
+                foreach(var datum2 in datums)
+                {
+
+                    Console.WriteLine($"  -> Comparando {datum1.DataId}/{datum1.DataName} con {datum2.DataId}/{datum2.DataName}");
+
+                    try
+                    {
+                        var correlation = await CalculaCorrelación(datum1, datum2);
+                        var correlationValue = double.IsNaN(correlation) ? null : (float?)correlation;
+
+                        var dataRelation = new DataRelation
+                        {
+                            DataIdSource = datum1.DataId,
+                            DataIdTarget = datum2.DataId,
+                            Correlation = correlationValue,
+                            Covariance = null
+                        };
+
+                        await _dataRelationService.CreateOrUpdate(dataRelation);
+                        Console.WriteLine($"    ✅ Correlación guardada: {datum1.DataId} <-> {datum2.DataId} = {correlationValue:F6}");
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        Console.WriteLine($"    ⚠️ Se omite comparación por argumento inválido: {ex.Message}");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Console.WriteLine($"    ⚠️ Se omite comparación por falta de datos comunes: {ex.Message}");
+                    }
+                }
+            }
+
+            Console.WriteLine("Finalizado el cálculo de correlaciones.");
         }
 
         private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum)
@@ -50,18 +96,12 @@ namespace FinPredictCore.Jobs
             return new DateOnly(date.Year, date.Month, 1);
         }
 
-        public async Task<double> CalculaCorrelación(short dataId1, short dataId2)
-        {
-            if (dataId1 == dataId2)
-                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(dataId2));
 
-            return await CalculaCorrelación(new Datum { DataId = dataId1, IsValue = true }, new Datum { DataId = dataId2, IsValue = true });
-        }
 
         public async Task<double> CalculaCorrelación(Datum datum1, Datum datum2)
         {
-            if (datum1.DataId == datum2.DataId)
-                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(datum2));
+//            if (datum1.DataId == datum2.DataId)
+//                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(datum2));
 
             var s1 = await GetSerie(datum1);
             var s2 = await GetSerie(datum2);
