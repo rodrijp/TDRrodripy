@@ -2,6 +2,7 @@
 using FinPredictCore.Configuration;
 using FinPredictCore.Jobs;
 using FinPredictCore.Service.Data;
+using FinPredictCore.Service.DataRelation;
 using FinPredictCore.Service.HistoricalData;
 using FinPredictData.Context;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IHistoricalDataService, HistoricalDataService>();
         services.AddScoped<IDataService, DataService>();
+        services.AddScoped<IDataRelationService, DataRelationService>();
         services.AddScoped<IImportFuentesToDB, ImportFuentesToDB>();
         services.AddScoped<ICreateDataRelation, CreateDataRelation>();
 
