@@ -45,16 +45,9 @@ El `Program.cs` carrega la configuracio amb `Microsoft.Extensions.Configuration.
 Per regenerar les entitats i el context des de la base de dades PostgreSQL:
 
 ```bash
+dotnet tool install --global dotnet-ef    #Fisrt Time
 cd C:\TDR\TDRrodripy\src\FinPredictData
-dotnet ef dbcontext scaffold 
-  "Host=localhost;Port=5432;Database=tdrmercatdb;Username=tdrmercat;Password=xxxx" \
-  Npgsql.EntityFrameworkCore.PostgreSQL \
-  --context "Context/TDRMercatContext" \
-  --context-dir Context \
-  --output-dir Models \
-  --namespace FinPredictData.Models \
-  --context-namespace FinPredictData.Context \
-  --force
+ dotnet ef dbcontext scaffold "Host=localhost;Port=5432;Database=tdrmercatdb;Username=tdrmercat;Password=xxxx" Npgsql.EntityFrameworkCore.PostgreSQL --context "TDRMercatContext" --context-dir Context --output-dir Models --namespace FinPredictData.Models --context-namespace FinPredictData.Context --force     
 ```
 
 | Flag | Significat |

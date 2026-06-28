@@ -16,6 +16,8 @@ public partial class TDRMercatContext : DbContext
     {
     }
 
+    public virtual DbSet<DataRelation> DataRelations { get; set; }
+
     public virtual DbSet<Datum> Data { get; set; }
 
     public virtual DbSet<HistoricalDatum> HistoricalData { get; set; }
@@ -23,15 +25,18 @@ public partial class TDRMercatContext : DbContext
     public virtual DbSet<Source> Sources { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=tdrmercatdb;Username=tdrmercat;Password=dnKZFBb5t2Orko.");
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=tdrmercatdb;Username=tdrmercat;Password=dnKZFBb5t2Orko.");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<DataRelation>(entity =>
+        {
+            entity.HasKey(e => e.DataRelationId).HasName("DataRelationId_PK");
+
+            entity.ToTable("DataRelation");
+        });
+
         modelBuilder.Entity<Datum>(entity =>
         {
             entity.HasKey(e => e.DataId);
