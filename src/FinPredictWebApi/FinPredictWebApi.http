@@ -1,6 +1,4 @@
 @FinPredictWebApi_HostAddress = http://localhost:5222
 
-GET {{FinPredictWebApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
 ###
+

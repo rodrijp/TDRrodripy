@@ -15,6 +15,11 @@ public class HistoricalDataController : ControllerBase
         _historicalDataService = historicalDataService;
     }
 
+    /// <summary>
+    /// Obtiene los datos históricos de un dato específico.
+    /// </summary>
+    /// <param name="dataId">Id del dato financiero</param>
+    /// <returns></returns>
     [HttpGet("{dataId}")]
     public async Task<ActionResult<List<HistoricalDatum>>> GetHistoricalDataByData(short dataId)
     {
