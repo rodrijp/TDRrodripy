@@ -17,7 +17,8 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins("http://localhost:5173") // Puerto de Vite
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         });
 });
 
