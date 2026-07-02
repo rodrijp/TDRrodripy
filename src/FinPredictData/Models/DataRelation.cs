@@ -14,4 +14,6 @@ public partial class DataRelation
     public float? Correlation { get; set; }
 
     public float? Covariance { get; set; }
+
+    public float? CorrelationLog { get; set; }
 }
