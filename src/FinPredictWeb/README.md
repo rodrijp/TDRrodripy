@@ -1,6 +1,14 @@
 
 npm create vite@latest FinPredictWeb -- --template react-ts
 
+
+# Scafold WebApi
+cd src/FinPredictWeb
+npm install openapi-fetch openapi-typescript  //First Time
+curl.exe -k https://localhost:7269/swagger/v1/swagger.json -o swagger.json
+npx openapi-typescript swagger.json --output src/api/schema.ts
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
