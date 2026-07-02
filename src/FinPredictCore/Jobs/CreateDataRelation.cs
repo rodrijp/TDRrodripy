@@ -52,16 +52,20 @@ namespace FinPredictCore.Jobs
                         var correlation = await CalculaCorrelación(datum1, datum2, TypeDatum.Arithmetic);
                         var correlationValue = double.IsNaN(correlation) ? null : (float?)correlation;
 
+                        var correlationLog = await CalculaCorrelación(datum1, datum2, TypeDatum.Logarithmic);
+                        var correlationLogValue = double.IsNaN(correlationLog) ? null : (float?)correlationLog;
+
                         var dataRelation = new DataRelation
                         {
                             DataIdSource = datum1.DataId,
                             DataIdTarget = datum2.DataId,
                             Correlation = correlationValue,
+                            CorrelationLog = correlationLogValue,
                             Covariance = null
                         };
 
                         await _dataRelationService.CreateOrUpdate(dataRelation);
-                        Console.WriteLine($"    ✅ Correlación guardada: {datum1.DataId} <-> {datum2.DataId} = {correlationValue:F6}");
+                        Console.WriteLine($"    ✅ Correlación guardada: {datum1.DataId} <-> {datum2.DataId} = {correlationValue:F6} | LogReturn: {correlationLogValue:F6}");
                     }
                     catch (ArgumentException ex)
                     {
@@ -82,19 +86,37 @@ namespace FinPredictCore.Jobs
             var data = await _historicalDataService.GetHistoricalDataByData(datum.DataId);
             var orderedData = data.OrderBy(h => h.Date).ToList();
 
-            return orderedData.Select((historicalDatum, index) =>
+            if (type == TypeDatum.Logarithmic)
             {
-                if (!datum.IsValue || index == 0)
-                    return (NormalizeToFirstDayOfMonth(historicalDatum.Date), historicalDatum.Value);
+                // Rendimiento logarítmico: ln(precio_actual / precio_anterior)
+                return orderedData.Select((historicalDatum, index) =>
+                {
+                    if (index == 0)
+                        return (NormalizeToFirstDayOfMonth(historicalDatum.Date), float.NaN);
 
-                var previousDatum = orderedData[index - 1];
-                if (previousDatum.Value == 0)
-                    return (NormalizeToFirstDayOfMonth(historicalDatum.Date), 0f);
+                    var previousDatum = orderedData[index - 1];
+                    if (previousDatum.Value <= 0 || historicalDatum.Value <= 0)
+                        return (NormalizeToFirstDayOfMonth(historicalDatum.Date), float.NaN);
 
-                var percentageGrowth = ((historicalDatum.Value - previousDatum.Value) / previousDatum.Value) * 100f;
-                return (NormalizeToFirstDayOfMonth(historicalDatum.Date), percentageGrowth);
-            })
-            .ToList();
+                    var logReturn = (float)Math.Log(historicalDatum.Value / previousDatum.Value);
+                    return (NormalizeToFirstDayOfMonth(historicalDatum.Date), logReturn);
+                }).ToList();
+            }
+            else // TypeDatum.Arithmetic
+            {
+                return orderedData.Select((historicalDatum, index) =>
+                {
+                    if (!datum.IsValue || index == 0)
+                        return (NormalizeToFirstDayOfMonth(historicalDatum.Date), historicalDatum.Value);
+
+                    var previousDatum = orderedData[index - 1];
+                    if (previousDatum.Value == 0)
+                        return (NormalizeToFirstDayOfMonth(historicalDatum.Date), 0f);
+
+                    var percentageGrowth = ((historicalDatum.Value - previousDatum.Value) / previousDatum.Value) * 100f;
+                    return (NormalizeToFirstDayOfMonth(historicalDatum.Date), percentageGrowth);
+                }).ToList();
+            }
         }
 
         private static DateOnly NormalizeToFirstDayOfMonth(DateOnly date)
@@ -142,7 +164,11 @@ namespace FinPredictCore.Jobs
             dict2 = dict2.Where(kv => kv.Key.CompareTo(start) >= 0 && kv.Key.CompareTo(end) <= 0)
                          .ToDictionary(kv => kv.Key, kv => kv.Value);
 
-            var commonDates = dict1.Keys.Intersect(dict2.Keys).OrderBy(d => d).ToList();
+            // Intersectar fechas comunes y filtrar valores NaN
+            var commonDates = dict1.Keys.Intersect(dict2.Keys)
+                                   .Where(d => !double.IsNaN(dict1[d]) && !double.IsNaN(dict2[d]))
+                                   .OrderBy(d => d)
+                                   .ToList();
 
             if (commonDates.Count < 2)
                 throw new InvalidOperationException("No hay suficientes puntos comunes en el periodo compartido para calcular la correlación.");

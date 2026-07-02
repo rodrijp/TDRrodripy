@@ -27,6 +27,7 @@ public class DataRelationService : IDataRelationService
         {
             existing.Correlation = dataRelation.Correlation;
             existing.Covariance = dataRelation.Covariance;
+            existing.CorrelationLog = dataRelation.CorrelationLog;
             await _context.SaveChangesAsync();
             return existing;
         }
