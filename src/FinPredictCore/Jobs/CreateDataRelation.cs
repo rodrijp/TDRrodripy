@@ -18,6 +18,12 @@ namespace FinPredictCore.Jobs
         private readonly IDataService _dataService;
         private readonly IDataRelationService _dataRelationService;
 
+        private enum TypeDatum
+        {
+            Arithmetic,
+            Logarithmic
+        }
+
         public CreateDataRelation(
             IHistoricalDataService historicalDataService,
             IDataService dataService,
@@ -43,7 +49,7 @@ namespace FinPredictCore.Jobs
 
                     try
                     {
-                        var correlation = await CalculaCorrelación(datum1, datum2);
+                        var correlation = await CalculaCorrelación(datum1, datum2, TypeDatum.Arithmetic);
                         var correlationValue = double.IsNaN(correlation) ? null : (float?)correlation;
 
                         var dataRelation = new DataRelation
@@ -71,7 +77,7 @@ namespace FinPredictCore.Jobs
             Console.WriteLine("Finalizado el cálculo de correlaciones.");
         }
 
-        private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum)
+        private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum,  TypeDatum type)
         {
             var data = await _historicalDataService.GetHistoricalDataByData(datum.DataId);
             var orderedData = data.OrderBy(h => h.Date).ToList();
@@ -98,13 +104,13 @@ namespace FinPredictCore.Jobs
 
 
 
-        public async Task<double> CalculaCorrelación(Datum datum1, Datum datum2)
+        private async Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type)
         {
 //            if (datum1.DataId == datum2.DataId)
 //                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(datum2));
 
-            var s1 = await GetSerie(datum1);
-            var s2 = await GetSerie(datum2);
+            var s1 = await GetSerie(datum1, type);
+            var s2 = await GetSerie(datum2, type);
 
             var (start, end, commonDates, x, y) = AlignAndExtractCommon(s1, s2);
 
