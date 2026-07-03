@@ -55,17 +55,20 @@ namespace FinPredictCore.Jobs
                         var correlationLog = await CalculaCorrelación(datum1, datum2, TypeDatum.Logarithmic);
                         var correlationLogValue = double.IsNaN(correlationLog) ? null : (float?)correlationLog;
 
+                        var covarianceLog = await CalculaCovarianza(datum1, datum2);
+                        var covarianceLogValue = double.IsNaN(covarianceLog) ? null : (float?)covarianceLog;
+
                         var dataRelation = new DataRelation
                         {
                             DataIdSource = datum1.DataId,
                             DataIdTarget = datum2.DataId,
                             Correlation = correlationValue,
                             CorrelationLog = correlationLogValue,
-                            Covariance = null
+                            Covariance = covarianceLogValue
                         };
 
                         await _dataRelationService.CreateOrUpdate(dataRelation);
-                        Console.WriteLine($"    ✅ Correlación guardada: {datum1.DataId} <-> {datum2.DataId} = {correlationValue:F6} | LogReturn: {correlationLogValue:F6}");
+                        Console.WriteLine($"    ✅ Correlación guardada: {datum1.DataId} <-> {datum2.DataId} = {correlationValue:F6} | LogReturn: {correlationLogValue:F6} | Covariance: {covarianceLogValue:F6}");
                     }
                     catch (ArgumentException ex)
                     {
@@ -139,6 +142,31 @@ namespace FinPredictCore.Jobs
             // Usar MathNet.Numerics para calcular la correlación de Pearson
             var correlation = Correlation.Pearson(x, y);
             return correlation;
+        }
+
+        private async Task<double> CalculaCovarianza(Datum datum1, Datum datum2)
+        {
+            var s1 = await GetSerie(datum1, TypeDatum.Logarithmic);
+            var s2 = await GetSerie(datum2, TypeDatum.Logarithmic);
+
+            var (_, _, _, x, y) = AlignAndExtractCommon(s1, s2);
+            return CalculateSampleCovariance(x, y);
+        }
+
+        private static double CalculateSampleCovariance(double[] x, double[] y)
+        {
+            var count = x.Length;
+            if (count < 2)
+                throw new InvalidOperationException("No hay suficientes puntos comunes en el periodo compartido para calcular la covarianza.");
+
+            var meanX = x.Average();
+            var meanY = y.Average();
+            var sum = 0.0;
+
+            for (var i = 0; i < count; i++)
+                sum += (x[i] - meanX) * (y[i] - meanY);
+
+            return sum / (count - 1);
         }
 
         private static (DateOnly start, DateOnly end, List<DateOnly> commonDates, double[] x, double[] y)
