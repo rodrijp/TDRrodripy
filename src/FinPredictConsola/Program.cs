@@ -27,8 +27,12 @@ using (var scope = host.Services.CreateScope())
     Console.WriteLine("=== Iniciando la aplicación ===");
     /*var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
     await importer.Do();*/
-    var importer = scope.ServiceProvider.GetRequiredService<ICreateDataRelation>();
-    await importer.Do();
+    var createRelation = scope.ServiceProvider.GetRequiredService<ICreateDataRelation>();
+    await createRelation.Do();
+
+    // Ejecutar cálculo de CAGR y guardado en BD
+    var cagrJob = scope.ServiceProvider.GetRequiredService<ICalculateCompoudAnualGrowthRate>();
+    await cagrJob.Do();
 }
 
 await host.RunAsync();
