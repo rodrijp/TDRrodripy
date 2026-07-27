@@ -18,6 +18,8 @@ public partial class TDRMercatContext : DbContext
 
     public virtual DbSet<DataRelation> DataRelations { get; set; }
 
+    public virtual DbSet<DataStadistic> DataStadistics { get; set; }
+
     public virtual DbSet<Datum> Data { get; set; }
 
     public virtual DbSet<HistoricalDatum> HistoricalData { get; set; }
@@ -35,6 +37,19 @@ public partial class TDRMercatContext : DbContext
             entity.HasKey(e => e.DataRelationId).HasName("DataRelationId_PK");
 
             entity.ToTable("DataRelation");
+        });
+
+        modelBuilder.Entity<DataStadistic>(entity =>
+        {
+            entity.HasKey(e => e.DataId).HasName("DataStadistics_pkey");
+
+            entity.Property(e => e.DataId).ValueGeneratedNever();
+            entity.Property(e => e.Cagr).HasColumnName("CAGR");
+
+            entity.HasOne(d => d.Data).WithOne(p => p.DataStadistic)
+                .HasForeignKey<DataStadistic>(d => d.DataId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_DATASDISTICS_DATA");
         });
 
         modelBuilder.Entity<Datum>(entity =>

@@ -15,6 +15,8 @@ public partial class Datum
 
     public bool IsValue { get; set; }
 
+    public virtual DataStadistic? DataStadistic { get; set; }
+
     public virtual ICollection<HistoricalDatum> HistoricalData { get; set; } = new List<HistoricalDatum>();
 
     public virtual Source Source { get; set; } = null!;

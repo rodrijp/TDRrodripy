@@ -4,13 +4,13 @@ using FinPredictCore.Jobs;
 using FinPredictCore.Service.Data;
 using FinPredictCore.Service.DataRelation;
 using FinPredictCore.Service.HistoricalData;
-using FinPredictCore.Service.CompoundAnualGrowthRate;
 using FinPredictData.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using FinPredictCore.Service.DataStadistic;
 
 namespace FinPredictCore.DependencyInjection;
 
@@ -31,7 +31,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IHistoricalDataService, HistoricalDataService>();
         services.AddScoped<IDataService, DataService>();
         services.AddScoped<IDataRelationService, DataRelationService>();
-        services.AddScoped<ICompoundAnualGrowthRateService, CompoundAnualGrowthRateService>();
+        services.AddScoped<IDataStadisticService, DataStadisticService>();
         services.AddScoped<IImportFuentesToDB, ImportFuentesToDB>();
         services.AddScoped<ICreateDataRelation, CreateDataRelation>();
         services.AddScoped<ICalculateCompoudAnualGrowthRate, CalculateCompoudAnualGrowthRate>();

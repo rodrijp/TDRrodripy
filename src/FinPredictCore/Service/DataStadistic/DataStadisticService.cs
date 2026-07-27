@@ -1,25 +1,25 @@
 using FinPredictData.Context;
 using Microsoft.EntityFrameworkCore;
-using CompoundModel = FinPredictData.Models.CompoundAnualGrowthRate;
+using DataStadisticModel = FinPredictData.Models.DataStadistic;
 
-namespace FinPredictCore.Service.CompoundAnualGrowthRate;
+namespace FinPredictCore.Service.DataStadistic;
 
-public class CompoundAnualGrowthRateService : ICompoundAnualGrowthRateService
+public class DataStadisticService : IDataStadisticService
 {
     private readonly TDRMercatContext _context;
 
-    public CompoundAnualGrowthRateService(TDRMercatContext context)
+    public DataStadisticService(TDRMercatContext context)
     {
         _context = context;
     }
 
-    public async Task<CompoundModel> CreateOrUpdate(CompoundModel model)
+    public async Task<DataStadisticModel> CreateOrUpdate(DataStadisticModel model)
     {
         if (model is null)
             throw new ArgumentNullException(nameof(model));
         try
         {
-            var existing = await _context.CompoundAnualGrowthRates
+            var existing = await _context.DataStadistics
                 .FirstOrDefaultAsync(x => x.DataId == model.DataId);
 
             if (existing is not null)
@@ -29,7 +29,7 @@ public class CompoundAnualGrowthRateService : ICompoundAnualGrowthRateService
                 return existing;
             }
 
-            _context.CompoundAnualGrowthRates.Add(model);
+            _context.DataStadistics.Add(model);
             await _context.SaveChangesAsync();
             return model;
         }

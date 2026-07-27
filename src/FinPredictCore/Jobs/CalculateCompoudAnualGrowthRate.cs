@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using FinPredictCore.Service.CompoundAnualGrowthRate;
 using FinPredictCore.Service.Data;
+using FinPredictCore.Service.DataStadistic;
 using FinPredictCore.Service.HistoricalData;
 using FinPredictData.Models;
 
@@ -12,12 +12,12 @@ namespace FinPredictCore.Jobs
 	{
 		private readonly IHistoricalDataService _historicalDataService;
 		private readonly IDataService _dataService;
-		private readonly ICompoundAnualGrowthRateService _compoundService;
+		private readonly IDataStadisticService _compoundService;
 
 		public CalculateCompoudAnualGrowthRate(
 			IHistoricalDataService historicalDataService,
 			IDataService dataService,
-			ICompoundAnualGrowthRateService compoundService)
+			IDataStadisticService compoundService)
 		{
 			_historicalDataService = historicalDataService;
 			_dataService = dataService;
@@ -40,7 +40,7 @@ namespace FinPredictCore.Jobs
 					if (historical.Count < 2)
 					{
 						Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: no hay datos suficientes.");
-						await _compoundService.CreateOrUpdate(new CompoundAnualGrowthRate { DataId = datum.DataId, Cagr = null });
+						await _compoundService.CreateOrUpdate(new DataStadistic { DataId = datum.DataId, Cagr = null });
 						continue;
 					}
 
@@ -94,7 +94,7 @@ namespace FinPredictCore.Jobs
 					Console.WriteLine($"    → Calculada media CAGR para {datum.DataId} {datum.DataName}: {(meanCagr.HasValue ? meanCagr.Value.ToString("P6") : "(n/a)")}");
 					Console.WriteLine($"    → Guardando en BD: DataId={datum.DataId}, Cagr={(cagrFloat.HasValue ? cagrFloat.Value.ToString("G10") : "null")}");
 
-					var saved = await _compoundService.CreateOrUpdate(new CompoundAnualGrowthRate
+					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
 					{
 						DataId = datum.DataId,
 						Cagr = cagrFloat
