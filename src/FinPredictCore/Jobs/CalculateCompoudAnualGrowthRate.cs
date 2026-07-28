@@ -31,6 +31,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var datum in datums)
 			{
+
 				try
 				{
 					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
@@ -44,55 +45,29 @@ namespace FinPredictCore.Jobs
 						continue;
 					}
 
-					// Primero, construir primer valor de cada año (primer registro encontrado en ese año)
-					var firstValueByYear = historical
-						.GroupBy(h => h.Date.Year)
-						.ToDictionary(g => g.Key, g => g.First().Value);
+					double? cagr = null;
 
-					var years = firstValueByYear.Keys.OrderBy(y => y).ToList();
-
-					var annualCagrs = new System.Collections.Generic.List<double>();
-
-					// Para cada año que tenga el año siguiente, calcular CAGR con n = 1 (valor_next / valor_this)^(1/1)-1
-					for (int i = 0; i < years.Count - 1; i++)
+					if (datum.IsValue)
 					{
-						var y = years[i];
-						var next = years[i + 1];
-						if (!firstValueByYear.TryGetValue(y, out var v1) || !firstValueByYear.TryGetValue(next, out var v2))
-							continue;
+						var first = historical.First();
+						var last = historical.Last();
+						var firstDate = first.Date.ToDateTime(TimeOnly.MinValue);
+						var lastDate = last.Date.ToDateTime(TimeOnly.MinValue);
+						var years = (lastDate - firstDate).TotalDays / 365.25;
 
-						if (v1 <= 0 || v2 <= 0)
-							continue;
-
-						var r = Math.Pow((double)(v2 / v1), 1.0 / (next - y)) - 1.0;
-						if (!double.IsNaN(r) && !double.IsInfinity(r))
-							annualCagrs.Add(r);
-					}
-
-					double? meanCagr = null;
-
-					if (annualCagrs.Count > 0)
-					{
-						meanCagr = annualCagrs.Average();
+						if (first.Value > 0 && last.Value > 0)
+						{
+							cagr = Math.Pow((double)(last.Value / first.Value), 1.0 / years) - 1.0;
+						}
 					}
 					else
 					{
-						// Fallback: usar periodo completo
-						var first = historical.First();
-						var last = historical.Last();
-						var n = last.Date.Year - first.Date.Year;
-						if (n > 0 && first.Value > 0 && last.Value > 0)
-						{
-							var r = Math.Pow((double)(last.Value / first.Value), 1.0 / n) - 1.0;
-							if (!double.IsNaN(r) && !double.IsInfinity(r))
-								meanCagr = r;
-						}
+
 					}
 
-					var cagrFloat = meanCagr.HasValue ? (float?)meanCagr.Value : null;
+					var cagrFloat = cagr.HasValue ? (float?)cagr.Value : null;
 
-					Console.WriteLine($"    → Calculada media CAGR para {datum.DataId} {datum.DataName}: {(meanCagr.HasValue ? meanCagr.Value.ToString("P6") : "(n/a)")}");
-					Console.WriteLine($"    → Guardando en BD: DataId={datum.DataId}, Cagr={(cagrFloat.HasValue ? cagrFloat.Value.ToString("G10") : "null")}");
+					Console.WriteLine($"    → Calculada CAGR para {datum.DataId} {datum.DataName}: {(cagr.HasValue ? cagr.Value.ToString("P6") : "(n/a)")}");
 
 					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
 					{
@@ -109,6 +84,20 @@ namespace FinPredictCore.Jobs
 			}
 
 			Console.WriteLine("Cálculo de CAGR finalizado.");
+		}
+
+		private static double ToFactor(double v)
+		{
+			// Para valores de porcentaje:
+			// - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
+			// - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
+			// Esto evita convertir 1 (1%) a 100% y obtener factor cero.
+			if (Math.Abs(v) < 1.0)
+			{
+				return 1.0 + v;
+			}
+
+			return 1.0 + v / 100.0;
 		}
 	}
 }
