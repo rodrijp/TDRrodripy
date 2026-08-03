@@ -40,6 +40,11 @@ namespace FinPredictCore.Jobs
 						continue;
 					}
 
+					if (datum.DataId == 16)
+					{
+						Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: Se calculará CAGR.");
+					}
+
 					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
 						.OrderBy(h => h.Date)
 						.ToList();
@@ -133,10 +138,10 @@ namespace FinPredictCore.Jobs
 			// - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
 			// - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
 			// Esto evita convertir 1 (1%) a 100% y obtener factor cero.
-			if (Math.Abs(v) < 1.0)
-			{
-				return 1.0 + v;
-			}
+//			if (Math.Abs(v) < 1.0)
+//			{
+//				return 1.0 + v;
+//			}
 
 			return 1.0 + v / 100.0;
 		}
