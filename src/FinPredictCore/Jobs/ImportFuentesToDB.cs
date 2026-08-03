@@ -25,7 +25,7 @@ public class ImportFuentesToDB : IImportFuentesToDB
 
     public void Do()
     {
-        ImportFuenteMacrotrendsToDB();
+     //   ImportFuenteMacrotrendsToDB();
     }
 
     private void ImportFuenteMacrotrendsToDB()
