@@ -33,7 +33,7 @@ using (var scope = host.Services.CreateScope())
   //   var createRelation = scope.ServiceProvider.GetRequiredService<ICreateDataRelation>();
   //   await createRelation.Do();
   // Ejecutar cálculo de CAGR y guardado en BD
-   var cagrJob = scope.ServiceProvider.GetRequiredService<ICalculateCompoudAnualGrowthRate>();
+   var cagrJob = scope.ServiceProvider.GetRequiredService<ICalculateDataStadistics>();
    await cagrJob.Do();
 }
 

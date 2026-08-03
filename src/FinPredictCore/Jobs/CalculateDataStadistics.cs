@@ -8,13 +8,13 @@ using FinPredictData.Models;
 
 namespace FinPredictCore.Jobs
 {
-	public class CalculateCompoudAnualGrowthRate : ICalculateCompoudAnualGrowthRate
+	public class CalculateDataStadistics : ICalculateDataStadistics
 	{
 		private readonly IHistoricalDataService _historicalDataService;
 		private readonly IDataService _dataService;
 		private readonly IDataStadisticService _compoundService;
 
-		public CalculateCompoudAnualGrowthRate(
+		public CalculateDataStadistics(
 			IHistoricalDataService historicalDataService,
 			IDataService dataService,
 			IDataStadisticService compoundService)
@@ -26,6 +26,12 @@ namespace FinPredictCore.Jobs
 
 		public async Task Do()
 		{
+			await CalculateCompoundAnualGrowthRate();
+			await CalculateVolatibility();
+		}
+
+		private async Task CalculateCompoundAnualGrowthRate()
+		{
 			var datums = _dataService.GetAllDatums().ToList();
 			Console.WriteLine($"Iniciando cálculo de CAGR para {datums.Count} activos...");
 
@@ -33,12 +39,12 @@ namespace FinPredictCore.Jobs
 			{
 				try
 				{
-
 					if (datum.DataId == 14 || datum.DataId == 15)
 					{
 						Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: No se calculará CAGR.");
 						continue;
 					}
+
 
 					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
 						.OrderBy(h => h.Date)
@@ -124,8 +130,12 @@ namespace FinPredictCore.Jobs
 				}
 			}
 
+			Console.WriteLine("Cálculo de CAGR finalizado.");
+		}
 
-					Console.WriteLine("Cálculo de CAGR finalizado.");
+		private Task CalculateVolatibility()
+		{
+			return Task.CompletedTask;
 		}
 
 		private static double ToFactor(double v)
@@ -133,10 +143,10 @@ namespace FinPredictCore.Jobs
 			// - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
 			// - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
 			// Esto evita convertir 1 (1%) a 100% y obtener factor cero.
-//			if (Math.Abs(v) < 1.0)
-//			{
-//				return 1.0 + v;
-//			}
+			// if (Math.Abs(v) < 1.0)
+			// {
+			// 	return 1.0 + v;
+			// }
 
 			return 1.0 + v / 100.0;
 		}

@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDataStadisticService, DataStadisticService>();
         services.AddScoped<IImportFuentesToDB, ImportFuentesToDB>();
         services.AddScoped<ICreateDataRelation, CreateDataRelation>();
-        services.AddScoped<ICalculateCompoudAnualGrowthRate, CalculateCompoudAnualGrowthRate>();
+        services.AddScoped<ICalculateDataStadistics, CalculateDataStadistics>();
 
         return services;
     }
