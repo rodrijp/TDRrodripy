@@ -9,7 +9,9 @@ public partial class DataStadistic
 
     public float? Cagr { get; set; }
 
-    public float? Volatilidad { get; set; }
+    public float? Volatilidadcruda { get; set; }
+
+    public float? Volatilidaddetendenciada { get; set; }
 
     public virtual Datum Data { get; set; } = null!;
 }

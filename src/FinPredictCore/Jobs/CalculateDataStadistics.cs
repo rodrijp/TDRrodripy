@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FinPredictCore.Service.Data;
@@ -29,6 +30,8 @@ namespace FinPredictCore.Jobs
 			await CalculateCompoundAnualGrowthRate();
 			await CalculateVolatibility();
 		}
+
+		#region CAGR
 
 		private async Task CalculateCompoundAnualGrowthRate()
 		{
@@ -133,9 +136,165 @@ namespace FinPredictCore.Jobs
 			Console.WriteLine("Cálculo de CAGR finalizado.");
 		}
 
-		private Task CalculateVolatibility()
+		#endregion
+
+		private async Task CalculateVolatibility()
 		{
-			return Task.CompletedTask;
+			var datums = _dataService.GetAllDatums().ToList();
+			Console.WriteLine($"Iniciando cálculo de volatilidad para {datums.Count} activos...");
+
+			foreach (var datum in datums)
+			{
+				try
+				{
+					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
+						.OrderBy(h => h.Date)
+						.ToList();
+
+					var annualHistorical = GetAnnualHistoricalValues(historical);
+					if (annualHistorical.Count < 2)
+					{
+						continue;
+					}
+
+					var logReturns = BuildLogReturns(datum, annualHistorical);
+					if (logReturns.Count < 2)
+					{
+						continue;
+					}
+
+					var crudeVolatility = CalculateHistoricalVolatility(logReturns);
+					var detrendedVolatility = CalculateDetrendedVolatility(logReturns);
+					if (double.IsNaN(crudeVolatility) || double.IsInfinity(crudeVolatility))
+					{
+						continue;
+					}
+
+					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
+					{
+						DataId = datum.DataId,
+						Volatilidadcruda = (float?)crudeVolatility,
+						Volatilidaddetendenciada = (float?)detrendedVolatility
+					});
+
+					Console.WriteLine($"    → Volatilidad para {datum.DataId} {datum.DataName}: Cruda={crudeVolatility}, Detendenciada={detrendedVolatility}");
+					Console.WriteLine($"    → Guardado: DataId={saved.DataId}, Volatilidadcruda={(saved.Volatilidadcruda.HasValue ? saved.Volatilidadcruda.Value.ToString("F6") : "(n/a)" )}, Volatilidaddetendenciada={(saved.Volatilidaddetendenciada.HasValue ? saved.Volatilidaddetendenciada.Value.ToString("F6") : "(n/a)")}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"  -> Error calculando volatilidad para {datum.DataId}: {ex.Message}");
+				}
+			}
+
+			Console.WriteLine("Cálculo de volatilidad finalizado.");
+		}
+
+		private static List<HistoricalDatum> GetAnnualHistoricalValues(List<HistoricalDatum> historical)
+		{
+			return historical
+				.GroupBy(h => h.Date.Year)
+				.Select(group => group.OrderByDescending(h => h.Date).First())
+				.OrderBy(h => h.Date)
+				.ToList();
+		}
+
+		private static List<double> BuildLogReturns(Datum datum, List<HistoricalDatum> annualHistorical)
+		{
+			var values = annualHistorical.Select(h => (double)h.Value).ToList();
+
+			if (datum.IsValue)
+			{
+				return LogReturnsFromIndex(values);
+			}
+
+			if (datum.DataId == 16)
+			{
+				return LogReturnsFromAnnualReturn(values);
+			}
+
+			return LogReturnsFromRate(values);
+		}
+
+		private static List<double> LogReturnsFromIndex(IReadOnlyList<double> values)
+		{
+			var results = new List<double>();
+
+			for (var i = 1; i < values.Count; i++)
+			{
+				if (values[i - 1] <= 0 || values[i] <= 0)
+				{
+					continue;
+				}
+
+				results.Add(Math.Log(values[i] / values[i - 1]));
+			}
+
+			return results;
+		}
+
+		private static List<double> LogReturnsFromAnnualReturn(IReadOnlyList<double> values)
+		{
+			var results = new List<double>();
+
+			foreach (var value in values)
+			{
+				if (value <= -1)
+				{
+					continue;
+				}
+
+				results.Add(Math.Log(1 + value));
+			}
+
+			return results;
+		}
+
+		private static List<double> LogReturnsFromRate(IReadOnlyList<double> values)
+		{
+			var results = new List<double>();
+
+			for (var i = 1; i < values.Count; i++)
+			{
+				if (values[i - 1] <= 0 || values[i] <= 0)
+				{
+					continue;
+				}
+
+				results.Add(Math.Log(values[i] / values[i - 1]));
+			}
+
+			return results;
+		}
+
+		private static double CalculateHistoricalVolatility(IReadOnlyList<double> values)
+		{
+			if (values.Count < 2)
+			{
+				return double.NaN;
+			}
+
+			var average = values.Average();
+			var variance = values.Sum(value => Math.Pow(value - average, 2)) / (values.Count - 1);
+			return Math.Sqrt(variance);
+		}
+
+		private static double CalculateDetrendedVolatility(IReadOnlyList<double> values, int movingAverageWindow = 5)
+		{
+			if (values.Count < movingAverageWindow)
+			{
+				return double.NaN;
+			}
+
+			var residuals = new List<double>();
+
+			for (var i = movingAverageWindow - 1; i < values.Count; i++)
+			{
+				var windowValues = values.Skip(i - (movingAverageWindow - 1)).Take(movingAverageWindow).ToList();
+				var movingAverage = windowValues.Average();
+				residuals.Add(values[i] - movingAverage);
+			}
+
+			return CalculateHistoricalVolatility(residuals);
 		}
 
 		private static double ToFactor(double v)
