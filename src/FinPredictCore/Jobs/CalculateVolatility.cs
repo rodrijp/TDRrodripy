@@ -1,56 +1,92 @@
 using System;
-using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using FinPredictCore.Service.Data;
+using FinPredictCore.Service.DataStadistic;
+using FinPredictCore.Service.HistoricalData;
+using FinPredictData.Models;
 
 namespace FinPredictCore.Jobs
 {
 	public class CalculateVolatility : ICalculateVolatility
 	{
-		public Task Do()
+		private readonly IHistoricalDataService _historicalDataService;
+		private readonly IDataService _dataService;
+		private readonly IDataStadisticService _dataStadisticService;
+
+		public CalculateVolatility(
+			IHistoricalDataService historicalDataService,
+			IDataService dataService,
+			IDataStadisticService dataStadisticService)
 		{
-			var filePath = @"C:\TDR\TDRrodripy\data\S&P 500 TR.csv";
-			var values = 0.0;
-			var count = 0;
-			var percentages = new System.Collections.Generic.List<double>();
+			_historicalDataService = historicalDataService;
+			_dataService = dataService;
+			_dataStadisticService = dataStadisticService;
+		}
 
-			if (File.Exists(filePath))
+		public async Task Do()
+		{
+			var datums = _dataService.GetAllDatums().ToList();
+			Console.WriteLine($"Iniciando cálculo de volatilidad para {datums.Count} activos...");
+
+			foreach (var datum in datums)
 			{
-				var lines = File.ReadAllLines(filePath);
-
-				foreach (var line in lines)
+				try
 				{
-					if (string.IsNullOrWhiteSpace(line))
-						continue;
-
-					var parts = line.Split(',');
-					if (parts.Length < 2)
-						continue;
-
-					if (double.TryParse(parts[1], out var percentageValue))
+					if (!datum.IsValue)
 					{
-						values += percentageValue;
-						percentages.Add(percentageValue);
-						count++;
+						continue;
 					}
+
+					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
+						.OrderBy(h => h.Date)
+						.ToList();
+
+					if (historical.Count < 2)
+					{
+						continue;
+					}
+
+					var increases = historical
+						.Zip(historical.Skip(1), (previous, current) =>
+						{
+							if (previous.Value <= 0 || current.Value <= 0)
+							{
+								return double.NaN;
+							}
+
+							return Math.Log((double)current.Value / previous.Value);
+						})
+						.Where(increase => !double.IsNaN(increase) && !double.IsInfinity(increase))
+						.ToList();
+
+					if (increases.Count < 2)
+					{
+						continue;
+					}
+
+					var median = increases.Sum() / increases.Count;
+
+					var variance = increases
+						.Sum(increase => Math.Pow(increase - median, 2)) / (increases.Count - 1);
+
+					var volatility = Math.Sqrt(variance);
+
+					var saved = await _dataStadisticService.CreateOrUpdate(new DataStadistic
+					{
+						DataId = datum.DataId,
+						Volatilidad = (float?)volatility
+					});
+
+					Console.WriteLine($"    → Volatilidad para {datum.DataId} {datum.DataName}: {volatility}");
+					Console.WriteLine($"    → Guardado: DataId={saved.DataId}, Volatilidad={(saved.Volatilidad.HasValue ? saved.Volatilidad.Value.ToString("F6") : "(n/a)")}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"  -> Error calculando volatilidad para {datum.DataId}: {ex.Message}");
 				}
 			}
-
-			var median = count > 0 ? values / count : 0.0;
-			var squaredDifferencesSum = 0.0;
-
-			foreach (var percentage in percentages)
-			{
-				var difference = percentage - median;
-				squaredDifferencesSum += difference * difference;
-			}
-
-			var variance = count > 1 ? squaredDifferencesSum / (count - 1) : 0.0;
-			var volatility = Math.Sqrt(variance);
-
-			Console.WriteLine($"Media de valores porcentuales: {median}");
-			Console.WriteLine($"Volatilidad: {volatility}");
-
-			return Task.CompletedTask;
 		}
 	}
 }
+

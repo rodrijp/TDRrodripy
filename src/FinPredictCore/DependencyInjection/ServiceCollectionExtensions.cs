@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IImportFuentesToDB, ImportFuentesToDB>();
         services.AddScoped<ICreateDataRelation, CreateDataRelation>();
         services.AddScoped<ICalculateDataStadistics, CalculateDataStadistics>();
+        services.AddScoped<ICalculateVolatility, CalculateVolatility>();
 
         return services;
     }
