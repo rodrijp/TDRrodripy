@@ -8,7 +8,7 @@ using FinPredictData.Models;
 
 namespace FinPredictCore.Jobs
 {
-	public class CalculateCompoudAnualGrowthRate : ICalculateCompoudAnualGrowthRate
+	public class CalculateCompoudAnualGrowthRate : ICalculateDataStadistics
 	{
 		private readonly IHistoricalDataService _historicalDataService;
 		private readonly IDataService _dataService;

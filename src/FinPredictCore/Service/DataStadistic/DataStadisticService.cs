@@ -24,9 +24,21 @@ public class DataStadisticService : IDataStadisticService
 
             if (existing is not null)
             {
-                existing.Cagr = model.Cagr;
-                existing.Volatilidadcruda = model.Volatilidadcruda;
-                existing.Volatilidaddetendenciada = model.Volatilidaddetendenciada;
+                if (model.Cagr.HasValue)
+                {
+                    existing.Cagr = model.Cagr;
+                }
+
+                if (model.Volatilidadcruda.HasValue)
+                {
+                    existing.Volatilidadcruda = model.Volatilidadcruda;
+                }
+
+                if (model.Volatilidaddetendenciada.HasValue)
+                {
+                    existing.Volatilidaddetendenciada = model.Volatilidaddetendenciada;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }
