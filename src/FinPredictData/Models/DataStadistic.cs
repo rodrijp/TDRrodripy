@@ -13,5 +13,9 @@ public partial class DataStadistic
 
     public float? Volatilidaddetendenciada { get; set; }
 
+    public float? Sortino { get; set; }
+
+    public float? Sharpe { get; set; }
+
     public virtual Datum Data { get; set; } = null!;
 }
