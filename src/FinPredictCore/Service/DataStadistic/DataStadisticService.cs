@@ -39,6 +39,11 @@ public class DataStadisticService : IDataStadisticService
                     existing.Volatilidaddetendenciada = model.Volatilidaddetendenciada;
                 }
 
+                if (model.Sortino.HasValue)
+                {
+                    existing.Sortino = model.Sortino;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }

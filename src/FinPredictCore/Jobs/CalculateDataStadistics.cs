@@ -29,6 +29,7 @@ namespace FinPredictCore.Jobs
 		{
 			await CalculateCompoundAnualGrowthRate();
 			await CalculateVolatibility();
+			await CalculateSortino();
 		}
 
 		#region CAGR
@@ -138,6 +139,7 @@ namespace FinPredictCore.Jobs
 
 		#endregion
 
+		#region Volatility
 		private async Task CalculateVolatibility()
 		{
 			var datums = _dataService.GetAllDatums().ToList();
@@ -189,6 +191,66 @@ namespace FinPredictCore.Jobs
 			Console.WriteLine("Cálculo de volatilidad finalizado.");
 		}
 
+		#endregion
+
+		private async Task CalculateSortino()
+		{
+			var datums = _dataService.GetAllDatums().ToList();
+			Console.WriteLine($"Iniciando cálculo de Sortino para {datums.Count} activos...");
+
+			foreach (var datum in datums)
+			{
+				if (datum.DataId == 14 || datum.DataId == 15)
+				{
+					Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: No se calculará Sortino.");
+					continue;
+				}
+
+				try
+				{
+					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
+						.OrderBy(h => h.Date)
+						.ToList();
+					var annualHistorical = GetAnnualHistoricalValues(historical);
+					var returns = BuildLogReturns(datum, annualHistorical);
+
+					var sortino = CalculateSortinoRatio(returns);
+					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
+					{
+						DataId = datum.DataId,
+						Sortino = double.IsNaN(sortino) || double.IsInfinity(sortino) ? null : (float?)sortino
+					});
+
+					Console.WriteLine($"    → Sortino para {datum.DataId} {datum.DataName}: {(saved.Sortino.HasValue ? saved.Sortino.Value.ToString("F6") : "(n/a)")}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"  -> Error calculando Sortino para {datum.DataId}: {ex.Message}");
+				}
+			}
+
+			Console.WriteLine("Cálculo de Sortino finalizado.");
+		}
+
+		private static double CalculateSortinoRatio(IReadOnlyList<double> returns, double targetReturn = 0)
+		{
+			if (returns.Count == 0)
+			{
+				return double.NaN;
+			}
+
+			var excessReturns = returns.Select(value => value - targetReturn).ToList();
+			var downsideReturns = excessReturns.Where(value => value < 0).ToList();
+			if (downsideReturns.Count == 0)
+			{
+				return double.NaN;
+			}
+
+			var downsideDeviation = Math.Sqrt(downsideReturns.Sum(value => value * value) / returns.Count);
+			var averageExcessReturn = excessReturns.Average();
+			return downsideDeviation > 0 ? averageExcessReturn / downsideDeviation : double.NaN;
+		}
+
 		private static List<HistoricalDatum> GetAnnualHistoricalValues(List<HistoricalDatum> historical)
 		{
 			return historical
@@ -207,11 +269,6 @@ namespace FinPredictCore.Jobs
 				return LogReturnsFromIndex(values);
 			}
 
-/*			if (datum.DataId == 16)
-			{
-				return LogReturnsFromAnnualReturn(values);
-			}
-*/
 			return LogReturnsFromRate(values);
 		}
 
