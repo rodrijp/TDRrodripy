@@ -207,11 +207,11 @@ namespace FinPredictCore.Jobs
 				return LogReturnsFromIndex(values);
 			}
 
-			if (datum.DataId == 16)
+/*			if (datum.DataId == 16)
 			{
 				return LogReturnsFromAnnualReturn(values);
 			}
-
+*/
 			return LogReturnsFromRate(values);
 		}
 
@@ -255,12 +255,13 @@ namespace FinPredictCore.Jobs
 
 			for (var i = 1; i < values.Count; i++)
 			{
-				if (values[i - 1] <= 0 || values[i] <= 0)
+				var factorPrev = ToFactor(values[i - 1]);
+				var factorCurr = ToFactor(values[i]);
+				if (factorPrev <= 0 || factorCurr <= 0)
 				{
-					continue;
+					continue;  //Tasa mas de 100% negativa.
 				}
-
-				results.Add(Math.Log(values[i] / values[i - 1]));
+				results.Add(Math.Log(factorCurr / factorPrev));
 			}
 
 			return results;
