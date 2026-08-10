@@ -29,6 +29,7 @@ namespace FinPredictCore.Jobs
 		{
 			await CalculateCompoundAnualGrowthRate();
 			await CalculateVolatibility();
+			await CalculateSharpe();
 			await CalculateSortino();
 		}
 
@@ -189,6 +190,45 @@ namespace FinPredictCore.Jobs
 			}
 
 			Console.WriteLine("Cálculo de volatilidad finalizado.");
+		}
+
+		#endregion
+
+		#region Sharpe
+		private async Task CalculateSharpe()
+		{
+			var datums = _dataService.GetAllDatums().ToList();
+			Console.WriteLine($"Iniciando cálculo de Sharpe para {datums.Count} activos...");
+
+			foreach (var datum in datums)
+			{
+				try
+				{
+					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
+						.OrderBy(h => h.Date)
+						.ToList();
+					var annualHistorical = GetAnnualHistoricalValues(historical);
+					var logReturns = BuildLogReturns(datum, annualHistorical);
+					var volatility = CalculateHistoricalVolatility(logReturns);
+					var sharpe = volatility > 0 && !double.IsNaN(volatility) && !double.IsInfinity(volatility)
+						? logReturns.Average() / volatility
+						: double.NaN;
+
+					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
+					{
+						DataId = datum.DataId,
+						Sharpe = double.IsNaN(sharpe) || double.IsInfinity(sharpe) ? null : (float?)sharpe
+					});
+
+					Console.WriteLine($"    → Sharpe para {datum.DataId} {datum.DataName}: {(saved.Sharpe.HasValue ? saved.Sharpe.Value.ToString("F6") : "(n/a)")}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"  -> Error calculando Sharpe para {datum.DataId}: {ex.Message}");
+				}
+			}
+
+			Console.WriteLine("Cálculo de Sharpe finalizado.");
 		}
 
 		#endregion

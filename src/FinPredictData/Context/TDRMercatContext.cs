@@ -47,6 +47,7 @@ public partial class TDRMercatContext : DbContext
             entity.Property(e => e.Cagr).HasColumnName("CAGR");
             entity.Property(e => e.Volatilidadcruda).HasColumnName("VOLATILIDADCruda");
             entity.Property(e => e.Volatilidaddetendenciada).HasColumnName("VOLATILIDADDetendenciada");
+            entity.Property(e => e.Sharpe).HasColumnName("Sharpe");
 
             entity.HasOne(d => d.Data).WithOne(p => p.DataStadistic)
                 .HasForeignKey<DataStadistic>(d => d.DataId)

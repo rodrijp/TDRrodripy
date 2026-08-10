@@ -44,6 +44,11 @@ public class DataStadisticService : IDataStadisticService
                     existing.Sortino = model.Sortino;
                 }
 
+                if (model.Sharpe.HasValue)
+                {
+                    existing.Sharpe = model.Sharpe;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }
