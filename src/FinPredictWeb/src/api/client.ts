@@ -1,5 +1,5 @@
 import createClient from 'openapi-fetch';
-import type { paths } from './schema';
+import type { paths, components } from './schema';
 
 // Configurar la URL base de la API
 const BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7269';
@@ -28,4 +28,15 @@ export const api = {
     if (error) throw new Error(`Error fetching historical data for id ${dataId}`);
     return data;
   },
+
+  // Obtener estadísticas financieras por ID
+  async getDataStadistic(dataId: number) {
+    const { data, error } = await apiClient.GET('/api/DataStadistic/{dataId}', {
+      params: { path: { dataId } },
+    });
+    if (error) throw new Error(`Error fetching data stadistic for id ${dataId}`);
+    return data;
+  },
 };
+
+export type DataStadistic = components['schemas']['DataStadistic'];

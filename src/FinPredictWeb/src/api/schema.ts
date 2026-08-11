@@ -80,6 +80,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/DataStadistic/{dataId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dataId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DataStadistic"];
+                        "application/json": components["schemas"]["DataStadistic"];
+                        "text/json": components["schemas"]["DataStadistic"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -105,6 +144,20 @@ export interface components {
             /** Format: float */
             value?: number;
             data?: components["schemas"]["Datum"];
+        };
+        DataStadistic: {
+            /** Format: int32 */
+            dataId?: number;
+            /** Format: float */
+            cagr?: number;
+            /** Format: float */
+            volatilidadcruda?: number;
+            /** Format: float */
+            volatilidaddetendenciada?: number;
+            /** Format: float */
+            sortino?: number;
+            /** Format: float */
+            sharpe?: number;
         };
         Source: {
             /** Format: int32 */

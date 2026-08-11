@@ -6,4 +6,5 @@ namespace FinPredictCore.Service.DataStadistic;
 public interface IDataStadisticService
 {
     Task<DataStadisticModel> CreateOrUpdate(DataStadisticModel model);
+    Task<DataStadisticModel?> GetByDataId(short dataId);
 }
