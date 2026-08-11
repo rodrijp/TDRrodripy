@@ -52,4 +52,10 @@ public class DataStadisticService : IDataStadisticService
             throw new InvalidOperationException($"Error guardando CompoundAnualGrowthRate para DataId={model.DataId}: {dbEx.Message}", dbEx);
         }
     }
+
+    public async Task<DataStadisticModel?> GetByDataId(short dataId)
+    {
+        return await _context.DataStadistics
+            .FirstOrDefaultAsync(x => x.DataId == dataId);
+    }
 }
