@@ -70,6 +70,50 @@
   }
 }
 
+.stat-card {
+  width: min(100%, 480px);
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+  color: white;
+  max-width: 520px;
+}
+
+.stat-card h2 {
+  margin: 0 0 14px;
+  font-size: 1.2rem;
+}
+
+.stat-card p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.stat-card dl {
+  display: grid;
+  gap: 12px 28px;
+  grid-template-columns: auto 1fr;
+  margin: 0;
+}
+
+.stat-card dt {
+  font-size: 0.95rem;
+  opacity: 0.76;
+}
+
+.stat-card dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.stat-card-error {
+  color: #ff6b6b;
+}
+
 #next-steps {
   display: flex;
   border-top: 1px solid var(--border);

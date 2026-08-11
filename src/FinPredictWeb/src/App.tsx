@@ -1,10 +1,13 @@
-import { DatumSelector } from './components/DatumSelector'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+import { DatumSelector } from './components/DatumSelector';
+import { DataStadisticCard } from './components/DataStadisticCard';
+import reactLogo from './assets/react.svg';
+import viteLogo from './assets/vite.svg';
+import heroImg from './assets/hero.png';
+import './App.css';
 
 function App() {
+  const [selectedDataId, setSelectedDataId] = useState<number | null>(null);
 
   return (
     <>
@@ -21,11 +24,12 @@ function App() {
           </p>
         </div>
         <DatumSelector
-          selectedDataId={null}
+          selectedDataId={selectedDataId}
           onDataIdChange={(dataId) => {
-            console.log('Selected dataId:', dataId);
+            setSelectedDataId(dataId);
           }}
         />
+        <DataStadisticCard dataId={selectedDataId} />
       </section>
 
       <div className="ticks"></div>
