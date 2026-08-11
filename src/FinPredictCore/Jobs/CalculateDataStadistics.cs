@@ -256,7 +256,7 @@ namespace FinPredictCore.Jobs
 
 					var sortino = CalculateSortinoRatio(returns);
 					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
-					{
+					{ 
 						DataId = datum.DataId,
 						Sortino = double.IsNaN(sortino) || double.IsInfinity(sortino) ? null : (float?)sortino
 					});
