@@ -28,6 +28,7 @@ public class ImportFuentesToDB : IImportFuentesToDB
         ImportFuenteMacrotrendsToDB();
         ImportFuenteSlickchartsToDB();
         ImportFuenteStLouisToDB();
+        
     }
 
     private void ImportFuenteMacrotrendsToDB()
@@ -230,6 +231,7 @@ public class ImportFuentesToDB : IImportFuentesToDB
         var registrosInvalidos = 0;
 
         var ultimoPorAny = new Dictionary<int, (DateOnly Date, float Value)>();
+        var primeroPorAny = new Dictionary<int, (DateOnly Date, float Value)>();
 
         for (var i = 0; i < lineas.Length; i++)
         {
@@ -287,21 +289,84 @@ public class ImportFuentesToDB : IImportFuentesToDB
             {
                 ultimoPorAny[any] = (fecha, value);
             }
-        }
 
-        foreach (var kv in ultimoPorAny)
-        {
-            var historicalDatum = new HistoricalDatum
+            if (!primeroPorAny.TryGetValue(any, out var existentePrimero) || fecha < existentePrimero.Date)
             {
-                Date = kv.Value.Date,
-                DataId = dataId,
-                Value = kv.Value.Value
-            };
-
-            _historicalDataService.CreateOrUpdate(historicalDatum).GetAwaiter().GetResult();
+                primeroPorAny[any] = (fecha, value);
+            }
         }
+        if (dataId == 18)
+        {
+            var registrosImportados = 0;
 
-        Console.WriteLine($"[ImportarArchivoStLouis] Completat: {ultimoPorAny.Count} registres importats, {registrosInvalidos} registres descartats.");
+            var years = primeroPorAny.Keys.OrderBy(y => y).ToList();
+            for (var idx = 0; idx < years.Count - 1; idx++)
+            {
+                var year = years[idx];
+                var nextYear = years[idx + 1];
+
+                var inicio = primeroPorAny[year];
+                var inicioNext = primeroPorAny[nextYear];
+
+                // yields are stored as percentages (e.g. 7.8 => 7.8%), convert to decimal
+                var y_t = inicio.Value / 100.0;
+                var y_t1 = inicioNext.Value / 100.0;
+
+                if (y_t < 0 || y_t1 < 0)
+                {
+                    continue;
+                }
+
+                // Coupon based on yield at purchase
+                var C = 100.0 * y_t;
+
+                double Pt = 0.0;
+                for (var i = 1; i <= 30; i++)
+                {
+                    Pt += C / Math.Pow(1.0 + y_t, i);
+                }
+                Pt += 100.0 / Math.Pow(1.0 + y_t, 30);
+
+                double Pt1 = 0.0;
+                for (var i = 1; i <= 29; i++)
+                {
+                    Pt1 += C / Math.Pow(1.0 + y_t1, i);
+                }
+                Pt1 += 100.0 / Math.Pow(1.0 + y_t1, 29);
+
+                if (Pt <= 0.0) continue;
+
+                var Rt = (Pt1 + C) / Pt - 1.0;
+
+                var historicalDatum = new HistoricalDatum
+                {
+                    Date = inicio.Date,
+                    DataId = dataId,
+                    Value = (float)(Rt * 100.0) // store as percentage to match other series
+                };
+
+                _historicalDataService.CreateOrUpdate(historicalDatum).GetAwaiter().GetResult();
+                registrosImportados++;
+            }
+
+            Console.WriteLine($"[ImportarArchivoStLouis] Completat (retorns 30y): {registrosImportados} registres importats, {registrosInvalidos} registres descartats.");
+        }
+        else
+        {
+            foreach (var kv in ultimoPorAny)
+            {
+                var historicalDatum = new HistoricalDatum
+                {
+                    Date = kv.Value.Date,
+                    DataId = dataId,
+                    Value = kv.Value.Value
+                };
+
+                _historicalDataService.CreateOrUpdate(historicalDatum).GetAwaiter().GetResult();
+            }
+
+            Console.WriteLine($"[ImportarArchivoStLouis] Completat: {ultimoPorAny.Count} registres importats, {registrosInvalidos} registres descartats.");
+        }
     }
 
     private void ImportarArchivo(string source, short dataId, string tempPath)
