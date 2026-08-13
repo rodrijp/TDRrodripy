@@ -4,5 +4,6 @@ namespace FinPredictCore.Service.Source
     {
         public const int SourceMacrotrends = 1;
         public const int SourceSlickcharts = 2;
+        public const int SourceStLouis = 3;
     }
 }
