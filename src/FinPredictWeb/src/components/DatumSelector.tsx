@@ -13,7 +13,7 @@ interface DatumSelectorProps {
 export const DatumSelector: React.FC<DatumSelectorProps> = ({
   selectedDataId = null,
   onDataIdChange,
-  label = 'Seleccionar Datum'
+  label = 'Seleccionar Activo:',
 }) => {
   const [datums, setDatums] = useState<Datum[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,12 +59,6 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
             </option>
           ))}
         </select>
-      )}
-      {selectedDatum && (
-        <div className="selected-datum-info">
-          <p><strong>Seleccionado:</strong> {selectedDatum.dataName}</p>
-          <p><strong>ID:</strong> {selectedDatum.dataId}</p>
-        </div>
       )}
     </div>
   );
