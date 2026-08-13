@@ -27,6 +27,7 @@ public class ImportFuentesToDB : IImportFuentesToDB
     {
         ImportFuenteMacrotrendsToDB();
         ImportFuenteSlickchartsToDB();
+        ImportFuenteStLouisToDB();
     }
 
     private void ImportFuenteMacrotrendsToDB()
@@ -179,6 +180,128 @@ public class ImportFuentesToDB : IImportFuentesToDB
         }
 
         Console.WriteLine($"[ImportarArchivoSlickcharts] Completat: {registrosValidos} registres importats, {registrosInvalidos} registres descartats.");
+    }
+
+    private void ImportFuenteStLouisToDB()
+    {
+        Console.WriteLine("[ImportFuentesToDB] Iniciant importació de fonts de StLouis...");
+        var dataPath = _workingDirectories.Data;
+        var tempPath = _workingDirectories.Temporary;
+        if (string.IsNullOrWhiteSpace(dataPath) || string.IsNullOrWhiteSpace(tempPath))
+        {
+            Console.WriteLine("[ImportFuentesToDB] Error: camins no configurats correctament.");
+            return;
+        }
+
+        var datos = _dataService.GetAllDatumsBySource(SourceUtil.SourceStLouis);
+        Console.WriteLine($"[ImportFuentesToDB] S'han trobat {datos.Count()} fonts per importar de StLouis.");
+
+        foreach (var dato in datos)
+        {
+            if (string.IsNullOrWhiteSpace(dato.DataName)) continue;
+
+            var source = Path.Combine(dataPath, $"{dato.DataName}.csv");
+            Console.WriteLine($"[ImportFuentesToDB] Processant: {dato.DataName}");
+            ImportarArchivoStLouis(source, dato.DataId);
+        }
+
+        Console.WriteLine("[ImportFuentesToDB] Importació StLouis completada. Netejant arxius temporals...");
+        CleanupTempFiles(tempPath);
+        Console.WriteLine("[ImportFuentesToDB] Procés StLouis finalitzat.");
+    }
+
+    private void ImportarArchivoStLouis(string source, short dataId)
+    {
+        Console.WriteLine($"[ImportarArchivoStLouis] Llegint arxiu: {Path.GetFileName(source)}");
+
+        if (!File.Exists(source))
+        {
+            Console.WriteLine($"[ImportarArchivoStLouis] Error: arxiu no trobat a {source}");
+            return;
+        }
+
+        var lineas = File.ReadAllLines(source);
+        if (lineas.Length < 2)
+        {
+            Console.WriteLine($"[ImportarArchivoStLouis] Error: arxiu buit o amb format invàlid a {Path.GetFileName(source)}");
+            return;
+        }
+
+        var registrosInvalidos = 0;
+
+        var ultimoPorAny = new Dictionary<int, (DateOnly Date, float Value)>();
+
+        for (var i = 0; i < lineas.Length; i++)
+        {
+            var linea = lineas[i].Trim();
+            if (string.IsNullOrWhiteSpace(linea))
+            {
+                registrosInvalidos++;
+                continue;
+            }
+
+            var partes = linea.Split(new[] { ',', ';' });
+            if (partes.Length < 2)
+            {
+                registrosInvalidos++;
+                continue;
+            }
+
+            var fechaTexto = partes[0].Trim().Trim('"');
+            var valorTexto = partes[1].Trim().Trim('"');
+
+            DateOnly fecha;
+            var parsed = false;
+
+            if (int.TryParse(fechaTexto, out var yearOnly))
+            {
+                fecha = new DateOnly(yearOnly, 12, 31);
+                parsed = true;
+            }
+            else if (DateTime.TryParseExact(fechaTexto, new[] { "yyyy-MM-dd", "MM/dd/yyyy", "M/d/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+            {
+                fecha = DateOnly.FromDateTime(dt);
+                parsed = true;
+            }
+            else if (DateTime.TryParse(fechaTexto, CultureInfo.InvariantCulture, DateTimeStyles.None, out dt))
+            {
+                fecha = DateOnly.FromDateTime(dt);
+                parsed = true;
+            }
+            else
+            {
+                registrosInvalidos++;
+                continue;
+            }
+
+            if (!decimal.TryParse(valorTexto.Replace(",", "."), NumberStyles.Number, CultureInfo.InvariantCulture, out var valorDecimal))
+            {
+                registrosInvalidos++;
+                continue;
+            }
+
+            var value = (float)valorDecimal;
+            var any = fecha.Year;
+
+            if (!ultimoPorAny.TryGetValue(any, out var existente) || fecha > existente.Date)
+            {
+                ultimoPorAny[any] = (fecha, value);
+            }
+        }
+
+        foreach (var kv in ultimoPorAny)
+        {
+            var historicalDatum = new HistoricalDatum
+            {
+                Date = kv.Value.Date,
+                DataId = dataId,
+                Value = kv.Value.Value
+            };
+
+            _historicalDataService.CreateOrUpdate(historicalDatum).GetAwaiter().GetResult();
+        }
+
+        Console.WriteLine($"[ImportarArchivoStLouis] Completat: {ultimoPorAny.Count} registres importats, {registrosInvalidos} registres descartats.");
     }
 
     private void ImportarArchivo(string source, short dataId, string tempPath)

@@ -200,19 +200,41 @@ namespace FinPredictCore.Jobs
 			var datums = _dataService.GetAllDatums().ToList();
 			Console.WriteLine($"Iniciando cálculo de Sharpe para {datums.Count} activos...");
 
+			var riskFreeStat = await _compoundService.GetByDataId(11);
+			var riskFreeRate = riskFreeStat?.Cagr;
+			if (!riskFreeRate.HasValue)
+			{
+				Console.WriteLine("  -> No se encontró el rendimiento libre de riesgo para DataId=11.");
+				return;
+			}
+
 			foreach (var datum in datums)
 			{
+				if (datum.DataId == 13 || datum.DataId == 14 || datum.DataId == 15)
+				{
+					Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: no se calculará Sharpe.");
+					continue;
+				}
+
 				try
 				{
-					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
-						.OrderBy(h => h.Date)
-						.ToList();
-					var annualHistorical = GetAnnualHistoricalValues(historical);
-					var logReturns = BuildLogReturns(datum, annualHistorical);
-					var volatility = CalculateHistoricalVolatility(logReturns);
-					var sharpe = volatility > 0 && !double.IsNaN(volatility) && !double.IsInfinity(volatility)
-						? logReturns.Average() / volatility
-						: double.NaN;
+					var datumStats = await _compoundService.GetByDataId(datum.DataId);
+					var rendimiento = datumStats?.Cagr;
+					var volatilidad = datumStats?.Volatilidaddetendenciada;	
+
+					if (!rendimiento.HasValue)
+					{
+						Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: no hay CAGR disponible para Sharpe.");
+						continue;
+					}
+
+					if (!volatilidad.HasValue || volatilidad.Value <= 0 || double.IsNaN(volatilidad.Value) || double.IsInfinity(volatilidad.Value))
+					{
+						Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: no hay volatilidad cruda válida para Sharpe.");
+						continue;
+					}
+
+					var sharpe = (rendimiento.Value - riskFreeRate.Value) / volatilidad.Value;
 
 					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
 					{
