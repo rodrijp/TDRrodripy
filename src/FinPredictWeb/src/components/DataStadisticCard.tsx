@@ -66,26 +66,20 @@ export const DataStadisticCard: React.FC<DataStadisticCardProps> = ({ dataId }) 
         <p className="stat-card-error">Error: {error}</p>
       ) : statistics ? (
         <dl>
-          <div>
-            <dt>CAGR</dt>
-            <dd>{formatPercent(statistics.cagr)}</dd>
-          </div>
-          <div>
-            <dt>Volatilidad cruda</dt>
-            <dd>{formatValue(statistics.volatilidadcruda)}</dd>
-          </div>
-          <div>
-            <dt>Volatilidad detendenciada</dt>
-            <dd>{formatValue(statistics.volatilidaddetendenciada)}</dd>
-          </div>
-          <div>
-            <dt>Sortino</dt>
-            <dd>{formatValue(statistics.sortino)}</dd>
-          </div>
-          <div>
-            <dt>Sharpe</dt>
-            <dd>{formatValue(statistics.sharpe)}</dd>
-          </div>
+          <dt>CAGR</dt>
+          <dd>{formatPercent(statistics.cagr)}</dd>
+
+          <dt>Volatilidad cruda</dt>
+          <dd>{formatValue(statistics.volatilidadcruda)}</dd>
+
+          <dt>Volatilidad detendenciada</dt>
+          <dd>{formatValue(statistics.volatilidaddetendenciada)}</dd>
+
+          <dt>Sortino</dt>
+          <dd>{formatValue(statistics.sortino)}</dd>
+
+          <dt>Sharpe</dt>
+          <dd>{formatValue(statistics.sharpe)}</dd>
         </dl>
       ) : (
         <p>No se encontraron estadísticas para el id {dataId}.</p>
