@@ -25,9 +25,10 @@ namespace FinPredictCore.Jobs
             _dataStadisticService = dataStadisticService;
         }
 
-        public Task Do()
+        public async Task Do()
         {
-            return CalculateCAGR20Y();
+            await CalculateCAGR20Y();
+            await CalculateNegVol30Y();
         }
 
         public async Task CalculateCAGR20Y()
@@ -88,6 +89,88 @@ namespace FinPredictCore.Jobs
                 catch (Exception)
                 {
                     // Intencionalmente se omite el activo si no puede calcularse el CAGR de 20 años.
+                }
+            }
+        }
+
+        public async Task CalculateNegVol30Y()
+        {
+            var datums = _dataService
+                .GetAllDatums()
+                .Where(d => d.DataId != 13 && d.DataId != 14 && d.DataId != 15 && d.DataId != 17)
+                .ToList();
+
+            foreach (var datum in datums)
+            {
+                try
+                {
+                    var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
+                        .OrderBy(h => h.Date)
+                        .ToList();
+
+                    if (historical.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    var lastDate = historical.Max(h => h.Date);
+                    var startDate = lastDate.AddYears(-30);
+
+                    var yearlySeries = historical
+                        .Where(h => h.Date >= startDate && h.Date <= lastDate)
+                        .GroupBy(h => h.Date.Year)
+                        .Select(g => g.OrderByDescending(h => h.Date).First())
+                        .OrderBy(h => h.Date)
+                        .ToList();
+
+                    if (yearlySeries.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    var negativeReturns = new List<double>();
+                    for (var i = 1; i < yearlySeries.Count; i++)
+                    {
+                        var previousValue = yearlySeries[i - 1].Value;
+                        var currentValue = yearlySeries[i].Value;
+
+                        if (previousValue <= 0 || currentValue <= 0)
+                        {
+                            continue;
+                        }
+
+                        var returnValue = (double)currentValue / previousValue - 1.0;
+                        if (returnValue < 0)
+                        {
+                            negativeReturns.Add(returnValue);
+                        }
+                    }
+
+                    if (negativeReturns.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    var mean = negativeReturns.Average();
+                    var variance = negativeReturns.Sum(r => Math.Pow(r - mean, 2)) / (negativeReturns.Count - 1);
+                    var negVol = Math.Sqrt(variance);
+
+                    if (double.IsNaN(negVol) || double.IsInfinity(negVol))
+                    {
+                        continue;
+                    }
+
+                    var saved = await _dataStadisticService.CreateOrUpdate(new DataStadistic
+                    {
+                        DataId = datum.DataId,
+                        Volatilidadneg30y = (float?)negVol
+                    });
+
+                    Console.WriteLine($"DataId={saved.DataId}, DataName={datum.DataName}, VOLATILIDADNeg 30Y={saved.Volatilidadneg30y:F6}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error calculando VolatilidadNeg30Y para DataId={datum.DataId}: {ex.Message}");
                 }
             }
         }

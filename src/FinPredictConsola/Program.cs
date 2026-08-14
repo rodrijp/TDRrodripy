@@ -39,6 +39,9 @@ using (var scope = host.Services.CreateScope())
   // Ejecutar cálculo del R-score y CAGR 20Y
    var rScoreJob = scope.ServiceProvider.GetRequiredService<IRScoreEngineCalculate>();
    await rScoreJob.Do();
+
+  // Ejecutar volatilidad negativa de 30 años por activo
+   await rScoreJob.CalculateNegVol30Y();
 }
 
 await host.RunAsync();
