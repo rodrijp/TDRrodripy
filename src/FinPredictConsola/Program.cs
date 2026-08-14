@@ -35,6 +35,10 @@ using (var scope = host.Services.CreateScope())
   // Ejecutar cálculo de CAGR y guardado en BD
    var cagrJob = scope.ServiceProvider.GetRequiredService<ICalculateDataStadistics>();
    await cagrJob.Do();
+
+  // Ejecutar cálculo del R-score y CAGR 20Y
+   var rScoreJob = scope.ServiceProvider.GetRequiredService<IRScoreEngineCalculate>();
+   await rScoreJob.Do();
 }
 
 await host.RunAsync();
