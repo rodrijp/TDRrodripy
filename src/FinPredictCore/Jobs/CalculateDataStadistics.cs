@@ -210,7 +210,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var datum in datums)
 			{
-				if (datum.DataId == 13 || datum.DataId == 14 || datum.DataId == 15)
+				if (datum.DataId == 13 || datum.DataId == 14 || datum.DataId == 15 || datum.DataId == 17)
 				{
 					Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: no se calculará Sharpe.");
 					continue;
@@ -262,7 +262,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var datum in datums)
 			{
-				if (datum.DataId == 14 || datum.DataId == 15)
+				if (datum.DataId == 14 || datum.DataId == 15 || datum.DataId == 17)
 				{
 					Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: No se calculará Sortino.");
 					continue;

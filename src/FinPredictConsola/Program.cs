@@ -27,8 +27,8 @@ using (var scope = host.Services.CreateScope())
     Console.WriteLine("=== Iniciando la aplicación ===");
 
   // Ejecutar importación de fuentes a la base de datos
-  //  var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
-  //  importer.Do();
+    var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
+    importer.Do();
   // Ejecutar cálculo de correlaciones y guardado en BD
   //   var createRelation = scope.ServiceProvider.GetRequiredService<ICreateDataRelation>();
   //   await createRelation.Do();

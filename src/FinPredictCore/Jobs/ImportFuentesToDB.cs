@@ -25,8 +25,8 @@ public class ImportFuentesToDB : IImportFuentesToDB
 
     public void Do()
     {
-        ImportFuenteMacrotrendsToDB();
-        ImportFuenteSlickchartsToDB();
+        //ImportFuenteMacrotrendsToDB();
+        //ImportFuenteSlickchartsToDB();
         ImportFuenteStLouisToDB();
         
     }
@@ -295,7 +295,7 @@ public class ImportFuentesToDB : IImportFuentesToDB
                 primeroPorAny[any] = (fecha, value);
             }
         }
-        if (dataId == 18)
+        if (dataId == 18) // Retorns a 30 anys
         {
             var registrosImportados = 0;
 
@@ -325,14 +325,16 @@ public class ImportFuentesToDB : IImportFuentesToDB
                 {
                     Pt += C / Math.Pow(1.0 + y_t, i);
                 }
-                Pt += 100.0 / Math.Pow(1.0 + y_t, 30);
+                var Vt = 100.0 / Math.Pow(1.0 + y_t, 30);
+                Pt += Vt;
 
                 double Pt1 = 0.0;
                 for (var i = 1; i <= 29; i++)
                 {
                     Pt1 += C / Math.Pow(1.0 + y_t1, i);
                 }
-                Pt1 += 100.0 / Math.Pow(1.0 + y_t1, 29);
+                var Vt1 = 100.0 / Math.Pow(1.0 + y_t1, 29);
+                Pt1 += Vt1;
 
                 if (Pt <= 0.0) continue;
 
