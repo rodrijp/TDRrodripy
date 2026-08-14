@@ -17,5 +17,13 @@ public partial class DataStadistic
 
     public float? Sharpe { get; set; }
 
+    public float? Cagr20y { get; set; }
+
+    public float? Volatilidadneg30y { get; set; }
+
+    public float? Sortino20y { get; set; }
+
+    public float? CorrelationGen30y { get; set; }
+
     public virtual Datum Data { get; set; } = null!;
 }
