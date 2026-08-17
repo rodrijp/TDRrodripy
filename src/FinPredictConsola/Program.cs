@@ -40,8 +40,7 @@ using (var scope = host.Services.CreateScope())
    var rScoreJob = scope.ServiceProvider.GetRequiredService<IRScoreEngineCalculate>();
    await rScoreJob.Do();
 
-  // Ejecutar volatilidad negativa de 30 años por activo
-   await rScoreJob.CalculateNegVol30Y();
+  // CalculateNegVol30Y ya se ejecuta dentro de rScoreJob.Do()
 }
 
 await host.RunAsync();
