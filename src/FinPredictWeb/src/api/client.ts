@@ -37,6 +37,16 @@ export const api = {
     if (error) throw new Error(`Error fetching data stadistic for id ${dataId}`);
     return data;
   },
+
+  // Obtener una relación de datos por origen y destino
+  async getDataRelation(dataIdSource: number, dataIdTarget: number) {
+    const { data, error } = await apiClient.GET('/api/DataRelation/{dataIdSource}/{dataIdTarget}', {
+      params: { path: { dataIdSource, dataIdTarget } },
+    });
+    if (error) throw new Error(`Error fetching data relation for source ${dataIdSource} and target ${dataIdTarget}`);
+    return data;
+  },
 };
 
 export type DataStadistic = components['schemas']['DataStadistic'];
+export type DataRelation = components['schemas']['DataRelation'];

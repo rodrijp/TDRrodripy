@@ -36,4 +36,12 @@ public class DataRelationService : IDataRelationService
         await _context.SaveChangesAsync();
         return dataRelation;
     }
+
+    public async Task<DataRelationModel?> GetByDataIdSourceAndTarget(short dataIdSource, short dataIdTarget)
+    {
+        return await _context.DataRelations
+            .FirstOrDefaultAsync(x =>
+                x.DataIdSource == dataIdSource &&
+                x.DataIdTarget == dataIdTarget);
+    }
 }
