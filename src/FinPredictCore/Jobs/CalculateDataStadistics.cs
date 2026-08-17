@@ -62,61 +62,7 @@ namespace FinPredictCore.Jobs
 						continue;
 					}
 
-					double? cagr = null;
-
-					if (datum.IsValue)
-					{
-						var first = historical.First();
-						var last = historical.Last();
-						var firstDate = first.Date.ToDateTime(TimeOnly.MinValue);
-						var lastDate = last.Date.ToDateTime(TimeOnly.MinValue);
-						var years = (lastDate - firstDate).TotalDays / 365.25;
-
-						if (first.Value > 0 && last.Value > 0)
-						{
-							cagr = Math.Pow((double)(last.Value / first.Value), 1.0 / years) - 1.0;
-						}
-					}
-					else
-					{
-						var annualHistorical = historical
-							.GroupBy(h => h.Date.Year)
-							.Select(g => g.Last())
-							.OrderBy(h => h.Date)
-							.ToList();
-
-						if (annualHistorical.Count >= 2)
-						{
-							var first = annualHistorical.First();
-							var last = annualHistorical.Last();
-							var firstDate = first.Date.ToDateTime(TimeOnly.MinValue);
-							var lastDate = last.Date.ToDateTime(TimeOnly.MinValue);
-							var years = (lastDate - firstDate).TotalDays / 365.25;
-
-							if (years > 0)
-							{
-								const double initialValue = 100.0;
-								var accumulatedValue = initialValue;
-
-								foreach (var yearlyRate in annualHistorical)
-								{
-									var factor = ToFactor(yearlyRate.Value);
-									if (factor <= 0)
-									{
-										accumulatedValue = double.NaN;
-										break;
-									}
-
-									accumulatedValue *= factor;
-								}
-
-								if (!double.IsNaN(accumulatedValue) && accumulatedValue > 0)
-								{
-									cagr = Math.Pow(accumulatedValue / initialValue, 1.0 / years) - 1.0;
-								}
-							}
-						}
-					}
+					var cagr = CalculaCagr(datum, historical);
 
 					var cagrFloat = cagr.HasValue ? (float?)cagr.Value : null;
 
@@ -136,6 +82,74 @@ namespace FinPredictCore.Jobs
 			}
 
 			Console.WriteLine("Cálculo de CAGR finalizado.");
+		}
+
+		public static double? CalculaCagr(Datum datum, List<HistoricalDatum> historical)
+		{
+			if (historical.Count < 2)
+			{
+				return null;
+			}
+
+			if (datum.IsValue)
+			{
+				var first = historical.First();
+				var last = historical.Last();
+				var firstDate = first.Date.ToDateTime(TimeOnly.MinValue);
+				var lastDate = last.Date.ToDateTime(TimeOnly.MinValue);
+				var years = (lastDate - firstDate).TotalDays / 365.25;
+
+				if (first.Value > 0 && last.Value > 0)
+				{
+					return Math.Pow((double)(last.Value / first.Value), 1.0 / years) - 1.0;
+				}
+
+				return null;
+			}
+
+			var annualHistorical = historical
+				.GroupBy(h => h.Date.Year)
+				.Select(g => g.Last())
+				.OrderBy(h => h.Date)
+				.ToList();
+
+			if (annualHistorical.Count < 2)
+			{
+				return null;
+			}
+
+			var firstAnnual = annualHistorical.First();
+			var lastAnnual = annualHistorical.Last();
+			var firstAnnualDate = firstAnnual.Date.ToDateTime(TimeOnly.MinValue);
+			var lastAnnualDate = lastAnnual.Date.ToDateTime(TimeOnly.MinValue);
+			var totalYears = (lastAnnualDate - firstAnnualDate).TotalDays / 365.25;
+
+			if (totalYears <= 0)
+			{
+				return null;
+			}
+
+			const double initialValue = 100.0;
+			var accumulatedValue = initialValue;
+
+			foreach (var yearlyRate in annualHistorical)
+			{
+				var factor = ToFactor(yearlyRate.Value);
+				if (factor <= 0)
+				{
+					accumulatedValue = double.NaN;
+					break;
+				}
+
+				accumulatedValue *= factor;
+			}
+
+			if (!double.IsNaN(accumulatedValue) && accumulatedValue > 0)
+			{
+				return Math.Pow(accumulatedValue / initialValue, 1.0 / totalYears) - 1.0;
+			}
+
+			return null;
 		}
 
 		#endregion
@@ -273,10 +287,7 @@ namespace FinPredictCore.Jobs
 					var historical = (await _historicalDataService.GetHistoricalDataByData(datum.DataId))
 						.OrderBy(h => h.Date)
 						.ToList();
-					var annualHistorical = GetAnnualHistoricalValues(historical);
-					var returns = BuildLogReturns(datum, annualHistorical);
-
-					var sortino = CalculateSortinoRatio(returns);
+					var sortino = CalculaSortino(datum, historical);
 					var saved = await _compoundService.CreateOrUpdate(new DataStadistic
 					{ 
 						DataId = datum.DataId,
@@ -292,6 +303,13 @@ namespace FinPredictCore.Jobs
 			}
 
 			Console.WriteLine("Cálculo de Sortino finalizado.");
+		}
+
+		public static double CalculaSortino(Datum datum, List<HistoricalDatum> historical)
+		{
+			var annualHistorical = GetAnnualHistoricalValues(historical);
+			var returns = BuildLogReturns(datum, annualHistorical);
+			return CalculateSortinoRatio(returns);
 		}
 
 		private static double CalculateSortinoRatio(IReadOnlyList<double> returns, double targetReturn = 0)

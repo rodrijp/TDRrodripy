@@ -60,26 +60,7 @@ namespace FinPredictCore.Jobs
                         .OrderBy(h => h.Date)
                         .ToList();
 
-                    if (last20YearsData.Count < 2)
-                    {
-                        continue;
-                    }
-
-                    var first = last20YearsData.First();
-                    var last = last20YearsData.Last();
-
-                    if (first.Value <= 0 || last.Value <= 0)
-                    {
-                        continue;
-                    }
-
-                    var years = (last.Date.ToDateTime(TimeOnly.MinValue) - first.Date.ToDateTime(TimeOnly.MinValue)).TotalDays / 365.25;
-                    if (years <= 0)
-                    {
-                        continue;
-                    }
-
-                    var cagr = Math.Pow(last.Value / first.Value, 1.0 / years) - 1.0;
+                    double? cagr = CalculateDataStadistics.CalculaCagr(datum, last20YearsData);
 
                     await _dataStadisticService.CreateOrUpdate(new DataStadistic
                     {

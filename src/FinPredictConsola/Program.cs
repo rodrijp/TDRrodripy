@@ -27,14 +27,14 @@ using (var scope = host.Services.CreateScope())
     Console.WriteLine("=== Iniciando la aplicación ===");
 
   // Ejecutar importación de fuentes a la base de datos
-    var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
-    importer.Do();
+  //  var importer = scope.ServiceProvider.GetRequiredService<IImportFuentesToDB>();
+   // importer.Do();
   // Ejecutar cálculo de correlaciones y guardado en BD
   //   var createRelation = scope.ServiceProvider.GetRequiredService<ICreateDataRelation>();
   //   await createRelation.Do();
   // Ejecutar cálculo de CAGR y guardado en BD
-   var cagrJob = scope.ServiceProvider.GetRequiredService<ICalculateDataStadistics>();
-   await cagrJob.Do();
+   //var cagrJob = scope.ServiceProvider.GetRequiredService<ICalculateDataStadistics>();
+   //await cagrJob.Do();
 
   // Ejecutar cálculo del R-score y CAGR 20Y
    var rScoreJob = scope.ServiceProvider.GetRequiredService<IRScoreEngineCalculate>();

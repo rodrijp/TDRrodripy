@@ -11,6 +11,8 @@ namespace FinPredictCore.Jobs
 		/// Ejecuta los cálculos de estadísticas de datos.
 		/// </summary>
 		Task Do();
+
+		
 	}
 }
 
