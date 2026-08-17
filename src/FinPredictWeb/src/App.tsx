@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DatumSelector } from './components/DatumSelector';
 import { DataRelationCard } from './components/DataRelationCard';
+import { DataStadisticCard } from './components/DataStadisticCard';
 import './App.css';
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
             />
 
             <div className="mt-3">
-              {/* placeholder for left statistics */}
+              <DataStadisticCard dataId={leftDataId} />
             </div>
           </div>
         </aside>
@@ -54,7 +55,7 @@ function App() {
             />
 
             <div className="mt-3">
-              {/* placeholder for right statistics */}
+              <DataStadisticCard dataId={rightDataId} />
             </div>
           </div>
         </aside>
