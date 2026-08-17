@@ -266,7 +266,51 @@ namespace FinPredictCore.Jobs
 
                         Console.WriteLine($"  → DataId={datum.DataId} ({datum.DataName}): {yearlySeries.First().Year}-{yearlySeries.Last().Year}");
 
-                        // Calcular retornos reales ajustados por inflación
+                        // Obtener primer y último año de la serie anual del activo
+                        var firstYear = yearlySeries.First().Year;
+                        var lastYear = yearlySeries.Last().Year;
+                        var numYears = yearlySeries.Count - 1;
+
+                        if (numYears < 1)
+                        {
+                            Console.WriteLine($"     ⚠ Insuficientes periodos anuales ({numYears})");
+                            continue;
+                        }
+
+                        var firstAssetValue = (double)yearlySeries.First().Data.Value;
+                        var lastAssetValue = (double)yearlySeries.Last().Data.Value;
+
+                        if (firstAssetValue <= 0 || lastAssetValue <= 0)
+                        {
+                            Console.WriteLine($"     ⚠ Valores de activo inválidos en rango {firstYear}-{lastYear}");
+                            continue;
+                        }
+
+                        if (!inflationByYear.ContainsKey(firstYear) || !inflationByYear.ContainsKey(lastYear))
+                        {
+                            Console.WriteLine($"     ⚠ Sin datos de inflación para el rango {firstYear}-{lastYear}");
+                            continue;
+                        }
+
+                        var firstInflationValue = (double)inflationByYear[firstYear];
+                        var lastInflationValue = (double)inflationByYear[lastYear];
+
+                        if (firstInflationValue <= 0 || lastInflationValue <= 0)
+                        {
+                            Console.WriteLine($"     ⚠ Valores de inflación inválidos en rango {firstYear}-{lastYear}");
+                            continue;
+                        }
+
+                        // R: retorno logarítmico anualizado del activo
+                        var R = Math.Log(lastAssetValue / firstAssetValue) / numYears;
+
+                        // I: retorno logarítmico anualizado de la inflación (DataId=13)
+                        var I = Math.Log(lastInflationValue / firstInflationValue) / numYears;
+
+                        // Numerador: (1+R)/(1+I) - 1
+                        var numerator = (1.0 + R) / (1.0 + I) - 1.0;
+
+                        // Calcular retornos reales año a año (para el denominador)
                         var realReturns = new List<double>();
 
                         for (var i = 1; i < yearlySeries.Count; i++)
@@ -281,16 +325,13 @@ namespace FinPredictCore.Jobs
                                 continue;
                             }
 
-                            // Verificar que tenemos inflación para ese año
                             if (!inflationByYear.ContainsKey(yearCurrent) || !inflationByYear.ContainsKey(yearPrevious))
                             {
                                 continue;
                             }
 
-                            // Calcular retorno logarítmico del activo
-                            var R = Math.Log(valueCurrent / valuePrevious);
+                            var assetLogReturn = Math.Log(valueCurrent / valuePrevious);
 
-                            // Calcular retorno logarítmico de la inflación
                             var inflationCurrent = (double)inflationByYear[yearCurrent];
                             var inflationPrevious = (double)inflationByYear[yearPrevious];
 
@@ -299,11 +340,9 @@ namespace FinPredictCore.Jobs
                                 continue;
                             }
 
-                            var I = Math.Log(inflationCurrent / inflationPrevious);
+                            var inflLogReturn = Math.Log(inflationCurrent / inflationPrevious);
 
-                            // Retorno real: (1+R)/(1+I) - 1
-                            // R e I ya son log returns, se usan directamente
-                            var realReturn = (1.0 + R) / (1.0 + I) - 1.0;
+                            var realReturn = (1.0 + assetLogReturn) / (1.0 + inflLogReturn) - 1.0;
                             realReturns.Add(realReturn);
                         }
 
@@ -313,12 +352,8 @@ namespace FinPredictCore.Jobs
                             continue;
                         }
 
-                        // Calcular Sortino Ratio
-                        // Numerador: media aritmética de retornos reales
-                        var numerator = realReturns.Average();
-
                         // Denominador: desviación a la baja
-                        // Elevar al cuadrado solo retornos negativos, promediar dividiendo por N (no N-1)
+                        // Elevar al cuadrado solo retornos negativos (activos con menor crecimiento que inflación)
                         var downsideSquares = realReturns
                             .Select(r => r < 0 ? Math.Pow(r, 2) : 0)
                             .ToList();
