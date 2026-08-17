@@ -16,5 +16,10 @@ namespace FinPredictCore.Jobs
         /// Calcula la volatilidad negativa de los últimos 30 años para cada activo.
         /// </summary>
         Task CalculateNegVol30Y();
+
+        /// <summary>
+        /// Calcula el Sortino Ratio ajustado por inflación para los últimos 20 años.
+        /// </summary>
+        Task CalculateSortino20Y();
     }
 }
