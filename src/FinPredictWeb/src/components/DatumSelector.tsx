@@ -37,8 +37,6 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
     fetchDatums();
   }, []);
 
-  const selectedDatum = datums.find(d => d.dataId === selectedDataId);
-
   return (
     <div className="datum-selector">
       <label>{label}</label>
