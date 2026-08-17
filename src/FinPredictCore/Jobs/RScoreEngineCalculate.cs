@@ -214,15 +214,30 @@ namespace FinPredictCore.Jobs
                     return;
                 }
 
-                // Crear un diccionario de inflación por año para búsquedas rápidas
-                Console.WriteLine("[3] Creando diccionario de inflación...");
-                var inflationByYear = new Dictionary<int, float>();
-                for (var i = 0; i < inflationYearlySeries.Count; i++)
+                // Los datos de inflación (DataId=13) son tasas anuales en porcentaje
+                // (ej. 12.62 = 12.62%). Construir un índice CPI acumulativo a partir de ellas.
+                Console.WriteLine("[3] Construyendo índice CPI acumulativo desde tasas de inflación...");
+                var sortedInflation = inflationYearlySeries.OrderBy(h => h.Date.Year).ToList();
+                var cpiByYear = new Dictionary<int, double>();
+                var inflationRateByYear = new Dictionary<int, double>();
+                double cpi = 100.0;
+                for (var i = 0; i < sortedInflation.Count; i++)
                 {
-                    inflationByYear[inflationYearlySeries[i].Date.Year] = inflationYearlySeries[i].Value;
+                    var year = sortedInflation[i].Date.Year;
+                    var rate = (double)sortedInflation[i].Value;
+                    inflationRateByYear[year] = rate;
+                    if (i == 0)
+                    {
+                        cpiByYear[year] = cpi;
+                    }
+                    else
+                    {
+                        cpi *= 1.0 + rate / 100.0;
+                        cpiByYear[year] = cpi;
+                    }
                 }
 
-                Console.WriteLine($"[3] ✓ Diccionario de inflación creado con {inflationByYear.Count} años");
+                Console.WriteLine($"[3] ✓ Índice CPI creado: {cpiByYear.Count} años, CPI final={cpi:F2}");
 
                 Console.WriteLine("[4] Obteniendo lista de activos...");
                 var datums = _dataService
@@ -286,29 +301,23 @@ namespace FinPredictCore.Jobs
                             continue;
                         }
 
-                        if (!inflationByYear.ContainsKey(firstYear) || !inflationByYear.ContainsKey(lastYear))
+                        if (!cpiByYear.ContainsKey(firstYear) || !cpiByYear.ContainsKey(lastYear))
                         {
                             Console.WriteLine($"     ⚠ Sin datos de inflación para el rango {firstYear}-{lastYear}");
                             continue;
                         }
 
-                        var firstInflationValue = (double)inflationByYear[firstYear];
-                        var lastInflationValue = (double)inflationByYear[lastYear];
-
-                        if (firstInflationValue <= 0 || lastInflationValue <= 0)
-                        {
-                            Console.WriteLine($"     ⚠ Valores de inflación inválidos en rango {firstYear}-{lastYear}");
-                            continue;
-                        }
+                        var firstCPI = cpiByYear[firstYear];
+                        var lastCPI = cpiByYear[lastYear];
 
                         // R: retorno logarítmico anualizado del activo
                         var R = Math.Log(lastAssetValue / firstAssetValue) / numYears;
 
-                        // I: retorno logarítmico anualizado de la inflación (DataId=13)
-                        var I = Math.Log(lastInflationValue / firstInflationValue) / numYears;
+                        // I: retorno logarítmico anualizado del CPI (acumulativo)
+                        var I = Math.Log(lastCPI / firstCPI) / numYears;
 
-                        // Numerador: (1+R)/(1+I) - 1
-                        var numerator = (1.0 + R) / (1.0 + I) - 1.0;
+                        // Numerador: retorno real anualizado
+                        var numerator = Math.Exp(R - I) - 1.0;
 
                         // Calcular retornos reales año a año (para el denominador)
                         var realReturns = new List<double>();
@@ -325,24 +334,25 @@ namespace FinPredictCore.Jobs
                                 continue;
                             }
 
-                            if (!inflationByYear.ContainsKey(yearCurrent) || !inflationByYear.ContainsKey(yearPrevious))
+                            if (!cpiByYear.ContainsKey(yearCurrent) || !cpiByYear.ContainsKey(yearPrevious))
                             {
                                 continue;
                             }
 
                             var assetLogReturn = Math.Log(valueCurrent / valuePrevious);
 
-                            var inflationCurrent = (double)inflationByYear[yearCurrent];
-                            var inflationPrevious = (double)inflationByYear[yearPrevious];
+                            var cpiCurrent = cpiByYear[yearCurrent];
+                            var cpiPrevious = cpiByYear[yearPrevious];
 
-                            if (inflationPrevious <= 0 || inflationCurrent <= 0)
+                            if (cpiPrevious <= 0 || cpiCurrent <= 0)
                             {
                                 continue;
                             }
 
-                            var inflLogReturn = Math.Log(inflationCurrent / inflationPrevious);
+                            var cpiLogReturn = Math.Log(cpiCurrent / cpiPrevious);
 
-                            var realReturn = (1.0 + assetLogReturn) / (1.0 + inflLogReturn) - 1.0;
+                            // Retorno real = retorno nominal del activo - retorno del CPI
+                            var realReturn = Math.Exp(assetLogReturn - cpiLogReturn) - 1.0;
                             realReturns.Add(realReturn);
                         }
 
