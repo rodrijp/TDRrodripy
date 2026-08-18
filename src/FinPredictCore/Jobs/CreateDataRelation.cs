@@ -90,7 +90,7 @@ namespace FinPredictCore.Jobs
             if (year > 0)
             {
                 var lastDate = data.Max(h => h.Date);
-                var startDate = lastDate.AddYears(-30);
+                var startDate = lastDate.AddYears(-year);
                 data = data.Where(h => h.Date >= startDate).ToList();
             }
             var orderedData = data.OrderBy(h => h.Date).ToList();
@@ -140,8 +140,8 @@ namespace FinPredictCore.Jobs
 //            if (datum1.DataId == datum2.DataId)
 //                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(datum2));
 
-            var s1 = await GetSerie(datum1, type);
-            var s2 = await GetSerie(datum2, type);
+            var s1 = await GetSerie(datum1, type, year);
+            var s2 = await GetSerie(datum2, type, year);
 
             var (start, end, commonDates, x, y) = AlignAndExtractCommon(s1, s2);
 
