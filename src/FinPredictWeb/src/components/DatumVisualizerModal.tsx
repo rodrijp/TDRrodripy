@@ -27,6 +27,7 @@ interface DatumVisualizerModalProps {
   isOpen: boolean;
   dataId: number | null;
   isValue?: boolean;
+  position?: 'left' | 'right' | null;
   onClose: () => void;
 }
 
@@ -34,6 +35,7 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
   isOpen,
   dataId,
   isValue,
+  position,
   onClose,
 }) => {
   const [historicalData, setHistoricalData] = useState<HistoricalDatum[]>([]);
@@ -188,7 +190,10 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
   }
 
   return (
-    <div className="datum-visualizer-popup-backdrop" onClick={onClose}>
+    <div 
+      className={`datum-visualizer-popup-backdrop${position ? ` datum-visualizer-${position}` : ''}`} 
+      onClick={onClose}
+    >
       <div
         className="datum-visualizer-popup"
         role="dialog"

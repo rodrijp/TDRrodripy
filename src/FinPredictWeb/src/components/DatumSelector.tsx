@@ -20,6 +20,7 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [modalPosition, setModalPosition] = useState<'left' | 'right' | null>(null);
 
   useEffect(() => {
     const fetchDatums = async () => {
@@ -39,8 +40,16 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
     fetchDatums();
   }, []);
 
-  const handleOpenPopup = () => {
+  const handleOpenLeftPanel = () => {
     if (selectedDataId != null) {
+      setModalPosition('left');
+      setIsPopupOpen(true);
+    }
+  };
+
+  const handleOpenRightPanel = () => {
+    if (selectedDataId != null) {
+      setModalPosition('right');
       setIsPopupOpen(true);
     }
   };
@@ -76,9 +85,9 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
           <button
             type="button"
             className={`datum-visualize-button${selectedDataId == null ? ' is-disabled' : ''}`}
-            title={selectedDataId == null ? 'Debes seleccionar el activo' : 'Visualizar datos'}
-            aria-label={selectedDataId == null ? 'Debes seleccionar el activo' : `Visualizar datos del activo ${selectedDataId}`}
-            onClick={handleOpenPopup}
+            title={selectedDataId == null ? 'Debes seleccionar el activo' : 'Visualizar datos en panel izquierdo'}
+            aria-label={selectedDataId == null ? 'Debes seleccionar el activo' : `Visualizar datos del activo ${selectedDataId} en panel izquierdo`}
+            onClick={handleOpenLeftPanel}
             disabled={selectedDataId == null}
           >
             <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
@@ -90,6 +99,24 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
               <path d="M51 47 L58 54" />
             </svg>
           </button>
+
+          <button
+            type="button"
+            className={`datum-visualize-button${selectedDataId == null ? ' is-disabled' : ''}`}
+            title={selectedDataId == null ? 'Debes seleccionar el activo' : 'Visualizar datos en panel derecho'}
+            aria-label={selectedDataId == null ? 'Debes seleccionar el activo' : `Visualizar datos del activo ${selectedDataId} en panel derecho`}
+            onClick={handleOpenRightPanel}
+            disabled={selectedDataId == null}
+          >
+            <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+              <rect x="8" y="10" width="22" height="18" rx="3" />
+              <rect x="34" y="10" width="22" height="12" rx="3" />
+              <rect x="8" y="34" width="22" height="20" rx="3" />
+              <rect x="34" y="26" width="22" height="28" rx="3" />
+              <circle cx="19" cy="23" r="9" />
+              <path d="M13 17 L6 10" />
+            </svg>
+          </button>
         </div>
       )}
 
@@ -97,7 +124,11 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
         isOpen={isPopupOpen}
         dataId={selectedDataId}
         isValue={selectedDatum?.isValue}
-        onClose={() => setIsPopupOpen(false)}
+        position={modalPosition}
+        onClose={() => {
+          setIsPopupOpen(false);
+          setModalPosition(null);
+        }}
       />
     </div>
   );
