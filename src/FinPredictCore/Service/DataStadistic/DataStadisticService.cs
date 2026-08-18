@@ -64,6 +64,11 @@ public class DataStadisticService : IDataStadisticService
                     existing.Sortino20y = model.Sortino20y;
                 }
 
+                if (model.CorrelationGen30y.HasValue)
+                {
+                    existing.CorrelationGen30y = model.CorrelationGen30y;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }
