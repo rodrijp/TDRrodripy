@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { DatumVisualizerChart } from './DatumVisualizerChart';
 import { DatumVisualizerTable } from './DatumVisualizerTable';
 import { useHistoricalData } from '../hooks/useHistoricalData';
@@ -23,7 +24,7 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
     return null;
   }
 
-  return (
+  const modal = (
     <div 
       className={`datum-visualizer-popup-backdrop${position ? ` datum-visualizer-${position}` : ''}`} 
       onClick={onClose}
@@ -58,4 +59,6 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };
