@@ -18,7 +18,7 @@ namespace FinPredictCore.Jobs
         private readonly IDataService _dataService;
         private readonly IDataRelationService _dataRelationService;
 
-        private enum TypeDatum
+        public enum TypeDatum
         {
             Arithmetic,
             Logarithmic
@@ -84,9 +84,15 @@ namespace FinPredictCore.Jobs
             Console.WriteLine("Finalizado el cálculo de correlaciones.");
         }
 
-        private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum,  TypeDatum type)
+        private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum,  TypeDatum type, int year = 0)
         {
             var data = await _historicalDataService.GetHistoricalDataByData(datum.DataId);
+            if (year > 0)
+            {
+                var lastDate = data.Max(h => h.Date);
+                var startDate = lastDate.AddYears(-30);
+                data = data.Where(h => h.Date >= startDate).ToList();
+            }
             var orderedData = data.OrderBy(h => h.Date).ToList();
 
             if (type == TypeDatum.Logarithmic)
@@ -129,7 +135,7 @@ namespace FinPredictCore.Jobs
 
 
 
-        private async Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type)
+        public async Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type, int year = 0)
         {
 //            if (datum1.DataId == datum2.DataId)
 //                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(datum2));

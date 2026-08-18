@@ -295,8 +295,11 @@ public class ImportFuentesToDB : IImportFuentesToDB
                 primeroPorAny[any] = (fecha, value);
             }
         }
-        if (dataId == 18) // Retorns a 30 anys
+        if ((dataId == DataUtil.TREASURY_30Y_FRED) || (dataId == DataUtil.TREASURY_10Y)) // Retorns a 30 anys
         {
+
+            var duration = (dataId == DataUtil.TREASURY_30Y_FRED) ? 30 : 10;
+
             var registrosImportados = 0;
 
             var years = primeroPorAny.Keys.OrderBy(y => y).ToList();
@@ -321,15 +324,15 @@ public class ImportFuentesToDB : IImportFuentesToDB
                 var C = 100.0 * y_t;
 
                 double Pt = 0.0;
-                for (var i = 1; i <= 30; i++)
+                for (var i = 1; i <= duration; i++)
                 {
                     Pt += C / Math.Pow(1.0 + y_t, i);
                 }
-                var Vt = 100.0 / Math.Pow(1.0 + y_t, 30);
+                var Vt = 100.0 / Math.Pow(1.0 + y_t, duration);
                 Pt += Vt;
 
                 double Pt1 = 0.0;
-                for (var i = 1; i <= 29; i++)
+                for (var i = 1; i <= (duration - 1); i++)
                 {
                     Pt1 += C / Math.Pow(1.0 + y_t1, i);
                 }

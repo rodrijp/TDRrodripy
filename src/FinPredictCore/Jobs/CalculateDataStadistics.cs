@@ -305,11 +305,11 @@ namespace FinPredictCore.Jobs
 			Console.WriteLine("Cálculo de Sortino finalizado.");
 		}
 
-		public static double CalculaSortino(Datum datum, List<HistoricalDatum> historical)
+		public static double CalculaSortino(Datum datum, List<HistoricalDatum> historical, double targetReturn = 0)
 		{
 			var annualHistorical = GetAnnualHistoricalValues(historical);
 			var returns = BuildLogReturns(datum, annualHistorical);
-			return CalculateSortinoRatio(returns);
+			return CalculateSortinoRatio(returns, targetReturn);
 		}
 
 		private static double CalculateSortinoRatio(IReadOnlyList<double> returns, double targetReturn = 0)

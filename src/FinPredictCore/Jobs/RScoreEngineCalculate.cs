@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FinPredictCore.Service.Data;
 using FinPredictCore.Service.DataStadistic;
 using FinPredictCore.Service.HistoricalData;
+using FinPredictCore.Service.Source;
 using FinPredictData.Models;
 
 namespace FinPredictCore.Jobs
@@ -32,11 +33,16 @@ namespace FinPredictCore.Jobs
             await CalculateSortino20Y();
         }
 
+        private HashSet<int> getExcludeDatumIds()
+        {
+            return new HashSet<int> { DataUtil.INFLATION, DataUtil.UNEMPLOYMENT, DataUtil.DEBT_GDP, DataUtil.M2, DataUtil.DOW_JONES, DataUtil.TREASURY_30Y, DataUtil.TREASURY_10Y};
+        }
+
         public async Task CalculateCAGR20Y()
         {
             var datums = _dataService
                 .GetAllDatums()
-                .Where(d => d.DataId != 13 && d.DataId != 14 && d.DataId != 15 && d.DataId != 17)
+                .Where(d => !getExcludeDatumIds().Contains(d.DataId))
                 .ToList();
 
             foreach (var datum in datums)
@@ -79,7 +85,7 @@ namespace FinPredictCore.Jobs
         {
             var datums = _dataService
                 .GetAllDatums()
-                .Where(d => d.DataId != 13 && d.DataId != 14 && d.DataId != 15 && d.DataId != 17)
+                .Where(d => !getExcludeDatumIds().Contains(d.DataId))
                 .ToList();
 
             foreach (var datum in datums)
@@ -110,7 +116,7 @@ namespace FinPredictCore.Jobs
                         continue;
                     }
 
-                    var negativeReturns = new List<double>();
+                    var allReturns = new List<double>();
                     for (var i = 1; i < yearlySeries.Count; i++)
                     {
                         var previousValue = yearlySeries[i - 1].Value;
@@ -122,19 +128,19 @@ namespace FinPredictCore.Jobs
                         }
 
                         var returnValue = (double)currentValue / previousValue - 1.0;
-                        if (returnValue < 0)
-                        {
-                            negativeReturns.Add(returnValue);
-                        }
+                        allReturns.Add(returnValue);
                     }
 
-                    if (negativeReturns.Count < 2)
+                    if (allReturns.Count < 2)
                     {
                         continue;
                     }
 
-                    var mean = negativeReturns.Average();
-                    var variance = negativeReturns.Sum(r => Math.Pow(r - mean, 2)) / (negativeReturns.Count - 1);
+                    var mean = allReturns.Average();
+                    var negativeSquaredDiffs = allReturns
+                        .Where(r => r < 0)
+                        .Sum(r => Math.Pow(r - mean, 2));
+                    var variance = negativeSquaredDiffs / allReturns.Count;
                     var negVol = Math.Sqrt(variance);
 
                     if (double.IsNaN(negVol) || double.IsInfinity(negVol))
@@ -171,59 +177,25 @@ namespace FinPredictCore.Jobs
                     .OrderBy(h => h.Date)
                     .ToList();
 
-                Console.WriteLine($"[1] Datos de inflación encontrados: {inflationHistorical.Count}");
-
-                if (inflationHistorical.Count < 2)
-                {
-                    Console.WriteLine("❌ ERROR: No hay datos de inflación disponibles para calcular Sortino 20Y.");
-                    return;
-                }
-
-                // Agrupar inflación por año (último de cada año)
-                Console.WriteLine("[2] Agrupando inflación por año...");
-                var inflationYearlySeries = inflationHistorical
-                    .GroupBy(h => h.Date.Year)
-                    .Select(g => g.OrderByDescending(h => h.Date).First())
-                    .OrderBy(h => h.Date)
+                var lastInflationDate = inflationHistorical.Max(h => h.Date);
+                var inflationStartDate = lastInflationDate.AddYears(-20);
+                var last20YearsInflation = inflationHistorical
+                    .Where(h => h.Date >= inflationStartDate && h.Date <= lastInflationDate)
                     .ToList();
+                var inflactionAvg20Y = last20YearsInflation.Any()
+                    ? last20YearsInflation.Average(h => (double)h.Value)
+                    : (double?)null;
 
-                Console.WriteLine($"[2] Series anuales de inflación: {inflationYearlySeries.Count} años (desde {inflationYearlySeries.First().Date.Year} hasta {inflationYearlySeries.Last().Date.Year})");
 
-                if (inflationYearlySeries.Count < 2)
-                {
-                    Console.WriteLine("❌ ERROR: Insuficientes años de inflación.");
-                    return;
-                }
+                Console.WriteLine($"Inflación mitja darrers 20 anys: {inflactionAvg20Y}");
 
-                // Los datos de inflación (DataId=13) son tasas anuales en porcentaje
-                // (ej. 12.62 = 12.62%). Construir un índice CPI acumulativo a partir de ellas.
-                Console.WriteLine("[3] Construyendo índice CPI acumulativo desde tasas de inflación...");
-                var sortedInflation = inflationYearlySeries.OrderBy(h => h.Date.Year).ToList();
-                var cpiByYear = new Dictionary<int, double>();
-                var inflationRateByYear = new Dictionary<int, double>();
-                double cpi = 100.0;
-                for (var i = 0; i < sortedInflation.Count; i++)
-                {
-                    var year = sortedInflation[i].Date.Year;
-                    var rate = (double)sortedInflation[i].Value;
-                    inflationRateByYear[year] = rate;
-                    if (i == 0)
-                    {
-                        cpiByYear[year] = cpi;
-                    }
-                    else
-                    {
-                        cpi *= 1.0 + rate / 100.0;
-                        cpiByYear[year] = cpi;
-                    }
-                }
 
-                Console.WriteLine($"[3] ✓ Índice CPI creado: {cpiByYear.Count} años, CPI final={cpi:F2}");
+
 
                 Console.WriteLine("[4] Obteniendo lista de activos...");
                 var datums = _dataService
                     .GetAllDatums()
-                    .Where(d => d.DataId != 13 && d.DataId != 14 && d.DataId != 15 && d.DataId != 17)
+                    .Where(d => !getExcludeDatumIds().Contains(d.DataId))
                     .ToList();
 
                 Console.WriteLine($"[4] ✓ Total de activos a procesar: {datums.Count}");
@@ -249,124 +221,9 @@ namespace FinPredictCore.Jobs
                         // Filtrar datos últimos 20 años y agrupar por año
                         var yearlySeries = historical
                             .Where(h => h.Date >= startDate && h.Date <= lastDate)
-                            .GroupBy(h => h.Date.Year)
-                            .Select(g => new { Year = g.Key, Data = g.OrderByDescending(h => h.Date).First() })
-                            .OrderBy(x => x.Year)
                             .ToList();
 
-                        if (yearlySeries.Count < 2)
-                        {
-                            Console.WriteLine($"  ⚠ DataId={datum.DataId}: Insuficientes series anuales ({yearlySeries.Count})");
-                            continue;
-                        }
-
-                        Console.WriteLine($"  → DataId={datum.DataId} ({datum.DataName}): {yearlySeries.First().Year}-{yearlySeries.Last().Year}");
-
-                        // Obtener primer y último año de la serie anual del activo
-                        var firstYear = yearlySeries.First().Year;
-                        var lastYear = yearlySeries.Last().Year;
-                        var numYears = yearlySeries.Count - 1;
-
-                        if (numYears < 1)
-                        {
-                            Console.WriteLine($"     ⚠ Insuficientes periodos anuales ({numYears})");
-                            continue;
-                        }
-
-                        var firstAssetValue = (double)yearlySeries.First().Data.Value;
-                        var lastAssetValue = (double)yearlySeries.Last().Data.Value;
-
-                        if (firstAssetValue <= 0 || lastAssetValue <= 0)
-                        {
-                            Console.WriteLine($"     ⚠ Valores de activo inválidos en rango {firstYear}-{lastYear}");
-                            continue;
-                        }
-
-                        if (!cpiByYear.ContainsKey(firstYear) || !cpiByYear.ContainsKey(lastYear))
-                        {
-                            Console.WriteLine($"     ⚠ Sin datos de inflación para el rango {firstYear}-{lastYear}");
-                            continue;
-                        }
-
-                        var firstCPI = cpiByYear[firstYear];
-                        var lastCPI = cpiByYear[lastYear];
-
-                        // R: retorno logarítmico anualizado del activo
-                        var R = Math.Log(lastAssetValue / firstAssetValue) / numYears;
-
-                        // I: retorno logarítmico anualizado del CPI (acumulativo)
-                        var I = Math.Log(lastCPI / firstCPI) / numYears;
-
-                        // Numerador: retorno real anualizado
-                        var numerator = Math.Exp(R - I) - 1.0;
-
-                        // Calcular retornos reales año a año (para el denominador)
-                        var realReturns = new List<double>();
-
-                        for (var i = 1; i < yearlySeries.Count; i++)
-                        {
-                            var yearCurrent = yearlySeries[i].Year;
-                            var yearPrevious = yearlySeries[i - 1].Year;
-                            var valueCurrent = (double)yearlySeries[i].Data.Value;
-                            var valuePrevious = (double)yearlySeries[i - 1].Data.Value;
-
-                            if (valuePrevious <= 0 || valueCurrent <= 0)
-                            {
-                                continue;
-                            }
-
-                            if (!cpiByYear.ContainsKey(yearCurrent) || !cpiByYear.ContainsKey(yearPrevious))
-                            {
-                                continue;
-                            }
-
-                            var assetLogReturn = Math.Log(valueCurrent / valuePrevious);
-
-                            var cpiCurrent = cpiByYear[yearCurrent];
-                            var cpiPrevious = cpiByYear[yearPrevious];
-
-                            if (cpiPrevious <= 0 || cpiCurrent <= 0)
-                            {
-                                continue;
-                            }
-
-                            var cpiLogReturn = Math.Log(cpiCurrent / cpiPrevious);
-
-                            // Retorno real = retorno nominal del activo - retorno del CPI
-                            var realReturn = Math.Exp(assetLogReturn - cpiLogReturn) - 1.0;
-                            realReturns.Add(realReturn);
-                        }
-
-                        if (realReturns.Count < 2)
-                        {
-                            Console.WriteLine($"     ⚠ Insuficientes retornos reales ({realReturns.Count})");
-                            continue;
-                        }
-
-                        // Denominador: desviación a la baja
-                        // Elevar al cuadrado solo retornos negativos (activos con menor crecimiento que inflación)
-                        var downsideSquares = realReturns
-                            .Select(r => r < 0 ? Math.Pow(r, 2) : 0)
-                            .ToList();
-
-                        var downsideVariance = downsideSquares.Sum() / realReturns.Count;
-                        var denominator = Math.Sqrt(downsideVariance);
-
-                        double sortino;
-                        if (denominator > 0)
-                        {
-                            sortino = numerator / denominator;
-                        }
-                        else
-                        {
-                            sortino = double.NaN;
-                        }
-
-                        if (double.IsNaN(sortino) || double.IsInfinity(sortino))
-                        {
-                            Console.WriteLine($"     ⚠ Sortino inválido (NaN o Infinity)");
-                            continue;
-                        }
+                        var sortino = CalculateDataStadistics.CalculaSortino(datum, yearlySeries, inflactionAvg20Y ?? 0);
 
                         var saved = await _dataStadisticService.CreateOrUpdate(new DataStadistic
                         {
@@ -374,7 +231,7 @@ namespace FinPredictCore.Jobs
                             Sortino20y = (float?)sortino
                         });
 
-                        Console.WriteLine($"     ✓ Sortino 20Y = {saved.Sortino20y:F6}");
+                        Console.WriteLine($"  {datum.DataName }   ✓ Sortino 20Y = {saved.Sortino20y:F6}");
                         successCount++;
                     }
                     catch (Exception ex)

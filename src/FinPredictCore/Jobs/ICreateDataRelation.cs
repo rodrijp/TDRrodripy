@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using FinPredictData.Models;
+using static FinPredictCore.Jobs.CreateDataRelation;
 
 namespace FinPredictCore.Jobs
 {
@@ -11,5 +13,6 @@ namespace FinPredictCore.Jobs
         /// Ejecuta la operación de creación de la relación de datos.
         /// </summary>
         Task Do();
+        Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type, int year = 0);
     }
 }
