@@ -1,8 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  createFilteredRowModel,
+  createSortedRowModel,
+  filterFn_includesString,
+  flexRender,
+  globalFilteringFeature,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  tableFeatures,
+  useTable,
+} from '@tanstack/react-table';
 import type { components } from '../api/schema';
 import { api } from '../api/client';
 
 type HistoricalDatum = components['schemas']['HistoricalDatum'];
+
+type DatumRow = {
+  historicalDataId?: number | string;
+  date: string;
+  value?: number;
+};
 
 interface DatumVisualizerModalProps {
   isOpen: boolean;
@@ -20,6 +39,8 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
   const [historicalData, setHistoricalData] = useState<HistoricalDatum[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [columnFilters, setColumnFilters] = useState<any[]>([]);
+  const [sorting, setSorting] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isOpen || dataId == null) {
@@ -59,10 +80,6 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
     };
   }, [isOpen, dataId]);
 
-  if (!isOpen || dataId == null) {
-    return null;
-  }
-
   const formatDate = (value?: string) => {
     if (!value) {
       return '—';
@@ -93,6 +110,83 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
     return `${(value).toFixed(2)} %`;
   };
 
+  const tableData = useMemo<DatumRow[]>(() => historicalData.map((item) => ({
+    historicalDataId: item.historicalDataId ?? `${item.date ?? 'fecha'}-${item.value ?? 'valor'}`,
+    date: item.date ?? '',
+    value: item.value,
+  })), [historicalData]);
+
+  const features = useMemo(
+    () =>
+      tableFeatures({
+        columnFilteringFeature,
+        columnVisibilityFeature,
+        globalFilteringFeature,
+        rowSortingFeature,
+        filteredRowModel: createFilteredRowModel(),
+        sortedRowModel: createSortedRowModel(),
+        filterFns: { includesString: filterFn_includesString },
+        sortFns: { alphanumeric: sortFn_alphanumeric },
+      }),
+    [],
+  );
+
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'date',
+        header: 'Fecha',
+        cell: ({ row }: { row: { original: DatumRow } }) => formatDate(row.original.date),
+        sortFn: 'alphanumeric' as const,
+        filterFn: (row: any, columnId: string, filterValue: string) => {
+          const rawValue = String(row.getValue(columnId) ?? '');
+          const formattedValue = formatDate(rawValue);
+          const search = String(filterValue ?? '').trim().toLowerCase();
+
+          if (!search) {
+            return true;
+          }
+
+          return rawValue.toLowerCase().includes(search) || formattedValue.toLowerCase().includes(search);
+        },
+      },
+      {
+        accessorKey: 'value',
+        header: isValue === true ? 'Valor' : 'Porcentaje',
+        cell: ({ row }: { row: { original: DatumRow } }) => formatHistoricalValue(row.original.value),
+        sortFn: 'alphanumeric' as const,
+        filterFn: (row: any, columnId: string, filterValue: string) => {
+          const rawValue = row.getValue(columnId);
+          const formattedValue = formatHistoricalValue(typeof rawValue === 'number' ? rawValue : Number(rawValue));
+          const search = String(filterValue ?? '').trim().toLowerCase();
+
+          if (!search) {
+            return true;
+          }
+
+          return String(rawValue ?? '').toLowerCase().includes(search) || formattedValue.toLowerCase().includes(search);
+        },
+      },
+    ],
+    [formatDate, formatHistoricalValue, isValue],
+  );
+
+  const table = useTable({
+    data: tableData,
+    columns,
+    features,
+    state: {
+      columnFilters,
+      sorting,
+    },
+    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
+  });
+
+  if (!isOpen || dataId == null) {
+    return null;
+  }
+
   return (
     <div className="datum-visualizer-popup-backdrop" onClick={onClose}>
       <div
@@ -122,22 +216,63 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
             ) : historicalData.length === 0 ? (
               <p className="datum-visualizer-status">No hay datos históricos para este activo.</p>
             ) : (
-              <table className="datum-visualizer-table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>{isValue === true ? 'Valor' : 'Porcentaje'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historicalData.map((item) => (
-                    <tr key={item.historicalDataId ?? `${item.date ?? 'fecha'}-${item.value ?? 'valor'}`}>
-                      <td>{formatDate(item.date)}</td>
-                      <td>{formatHistoricalValue(item.value)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                <table className="datum-visualizer-table">
+                  <thead>
+                    {table.getHeaderGroups().map((headerGroup: any) => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header: any) => (
+                          <th
+                            key={header.id}
+                            onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                            style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
+                          >
+                            <div className="datum-visualizer-header-cell">
+                              {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                              {header.column.getCanSort() ? (
+                                <span className="datum-visualizer-sort-indicator">
+                                  {header.column.getIsSorted() === 'asc' ? ' ↑' : header.column.getIsSorted() === 'desc' ? ' ↓' : ' ↕'}
+                                </span>
+                              ) : null}
+                            </div>
+                            {header.column.getCanFilter() ? (
+                              <div className="datum-visualizer-column-filter">
+                                <input
+                                  type="text"
+                                  value={String(header.column.getFilterValue() ?? '')}
+                                  onChange={(event) => header.column.setFilterValue(event.target.value || undefined)}
+                                  placeholder={
+                                    header.column.id === 'date'
+                                      ? 'Filtrar fecha'
+                                      : 'Filtrar valor'
+                                  }
+                                />
+                              </div>
+                            ) : null}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.length === 0 ? (
+                      <tr>
+                        <td colSpan={columns.length} className="datum-visualizer-no-results">
+                          No hay resultados para el filtro aplicado.
+                        </td>
+                      </tr>
+                    ) : (
+                      table.getRowModel().rows.map((row: any) => (
+                        <tr key={row.id}>
+                          {row.getVisibleCells().map((cell: any) => (
+                            <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                          ))}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </>
             )}
           </div>
         </div>
