@@ -1,3 +1,4 @@
+import { DatumVisualizerChart } from './DatumVisualizerChart';
 import { DatumVisualizerTable } from './DatumVisualizerTable';
 import { useHistoricalData } from '../hooks/useHistoricalData';
 
@@ -42,9 +43,7 @@ export const DatumVisualizerModal: React.FC<DatumVisualizerModalProps> = ({
         </div>
 
         <div className="datum-visualizer-body">
-          <div className="datum-visualizer-chart-placeholder" aria-label="Zona de gráfica reservada">
-            <span>Gráfica</span>
-          </div>
+          <DatumVisualizerChart data={historicalData} isValue={isValue} />
 
           <div className="datum-visualizer-table-container">
             <DatumVisualizerTable data={historicalData} isValue={isValue} loading={loading} error={error} />

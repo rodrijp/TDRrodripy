@@ -233,9 +233,9 @@
   min-height: 0;
 }
 
-.datum-visualizer-chart-placeholder {
-  height: 220px;
-  border: 1px dashed rgba(148, 163, 184, 0.45);
+.datum-visualizer-chart {
+  height: 240px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 0.9rem;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
   display: flex;
@@ -244,6 +244,12 @@
   color: #cbd5e1;
   font-weight: 600;
   letter-spacing: 0.04em;
+  padding: 1rem;
+}
+
+.datum-visualizer-chart canvas {
+  max-height: 100%;
+  width: 100% !important;
 }
 
 .datum-visualizer-table-container {
