@@ -25,5 +25,7 @@ public partial class DataStadistic
 
     public float? CorrelationGen30y { get; set; }
 
+    public float? Rscore { get; set; }
+
     public virtual Datum Data { get; set; } = null!;
 }
