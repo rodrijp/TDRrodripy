@@ -88,9 +88,6 @@ public class DataStadisticService : IDataStadisticService
         }
     }
 
-    public async Task<DataStadisticModel?> GetByDataId(short dataId)
-    {
-        return await _context.DataStadistics
+    public async Task<DataStadisticModel?> GetByDataId(short dataId) => await _context.DataStadistics
             .FirstOrDefaultAsync(x => x.DataId == dataId);
-    }
 }

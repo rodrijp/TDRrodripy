@@ -45,8 +45,10 @@ public partial class TDRMercatContext : DbContext
 
             entity.Property(e => e.DataId).ValueGeneratedNever();
             entity.Property(e => e.Cagr).HasColumnName("CAGR");
+            entity.Property(e => e.Cagr10y).HasColumnName("CAGR 10Y");
             entity.Property(e => e.Cagr20y).HasColumnName("CAGR 20Y");
             entity.Property(e => e.CorrelationGen30y).HasColumnName("CorrelationGen 30Y");
+            entity.Property(e => e.Rasignation).HasColumnName("RAsignation");
             entity.Property(e => e.Rscore).HasColumnName("RScore");
             entity.Property(e => e.Sortino20y).HasColumnName("Sortino 20Y");
             entity.Property(e => e.Volatilidadcruda).HasColumnName("VOLATILIDADCruda");

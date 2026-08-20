@@ -39,10 +39,7 @@ namespace FinPredictCore.Jobs
             await RScoreCalculator();
         }
 
-        private HashSet<int> getExcludeDatumIds()
-        {
-            return new HashSet<int> { DataUtil.INFLATION, DataUtil.UNEMPLOYMENT, DataUtil.DEBT_GDP, DataUtil.M2, DataUtil.DOW_JONES, DataUtil.TREASURY_30Y, DataUtil.TREASURY_10Y};
-        }
+        private HashSet<int> getExcludeDatumIds() => new HashSet<int> { DataUtil.INFLATION, DataUtil.UNEMPLOYMENT, DataUtil.DEBT_GDP, DataUtil.M2, DataUtil.DOW_JONES, DataUtil.TREASURY_30Y, DataUtil.TREASURY_10Y };
 
         public async Task CalculateCAGR20Y()
         {
@@ -194,8 +191,7 @@ namespace FinPredictCore.Jobs
 
 
                 Console.WriteLine($"Inflación mitja darrers 20 anys: {inflactionAvg20Y}");
-
-
+                inflactionAvg20Y = CalculateDataStadistics.ToDecimal(inflactionAvg20Y ?? 0); // Convertir a factor (1 + tasa de inflación)   
 
 
                 Console.WriteLine("[4] Obteniendo lista de activos...");

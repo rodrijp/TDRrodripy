@@ -27,5 +27,9 @@ public partial class DataStadistic
 
     public float? Rscore { get; set; }
 
+    public float? Rasignation { get; set; }
+
+    public float? Cagr10y { get; set; }
+
     public virtual Datum Data { get; set; } = null!;
 }

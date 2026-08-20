@@ -128,10 +128,7 @@ namespace FinPredictCore.Jobs
             }
         }
 
-        private static DateOnly NormalizeToFirstDayOfMonth(DateOnly date)
-        {
-            return new DateOnly(date.Year, date.Month, 1);
-        }
+        private static DateOnly NormalizeToFirstDayOfMonth(DateOnly date) => new DateOnly(date.Year, date.Month, 1);
 
 
 
