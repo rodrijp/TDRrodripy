@@ -26,5 +26,10 @@ namespace FinPredictCore.Jobs
         /// Calcula la correlación general de cada activo con el S&P 500 en un intervalo de 30 años.
         /// </summary>
         Task CalculateCorrelationGen30Y();
+
+        /// <summary>
+        /// Calcula el RScore final para cada activo combinando CAGR20Y, VolatilidadNeg30Y, Sortino20Y y CorrelationGen30Y.
+        /// </summary>
+        Task RScoreCalculator();
     }
 }

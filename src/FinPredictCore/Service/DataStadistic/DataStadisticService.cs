@@ -69,6 +69,11 @@ public class DataStadisticService : IDataStadisticService
                     existing.CorrelationGen30y = model.CorrelationGen30y;
                 }
 
+                if (model.Rscore.HasValue)
+                {
+                    existing.Rscore = model.Rscore;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }
