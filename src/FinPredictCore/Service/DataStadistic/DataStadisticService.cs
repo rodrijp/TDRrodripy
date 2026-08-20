@@ -74,6 +74,16 @@ public class DataStadisticService : IDataStadisticService
                     existing.Rscore = model.Rscore;
                 }
 
+                if (model.Cagr10y.HasValue)
+                {
+                    existing.Cagr10y = model.Cagr10y;
+                }
+
+                if (model.Rasignation.HasValue)
+                {
+                    existing.Rasignation = model.Rasignation;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }

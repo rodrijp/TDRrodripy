@@ -32,7 +32,7 @@ namespace FinPredictCore.Jobs
 
         public async Task Do()
         {
-            await CalculateCAGR20Y();
+            await CalculateCAGR();
             await CalculateNegVol30Y();
             await CalculateSortino20Y();
             await CalculateCorrelationGen30Y();
@@ -41,7 +41,7 @@ namespace FinPredictCore.Jobs
 
         private HashSet<int> getExcludeDatumIds() => new HashSet<int> { DataUtil.INFLATION, DataUtil.UNEMPLOYMENT, DataUtil.DEBT_GDP, DataUtil.M2, DataUtil.DOW_JONES, DataUtil.TREASURY_30Y, DataUtil.TREASURY_10Y };
 
-        public async Task CalculateCAGR20Y()
+        public async Task CalculateCAGR()
         {
             var datums = _dataService
                 .GetAllDatums()
@@ -69,12 +69,21 @@ namespace FinPredictCore.Jobs
                         .OrderBy(h => h.Date)
                         .ToList();
 
-                    double? cagr = CalculateDataStadistics.CalculaCagr(datum, last20YearsData);
+                    double? cagr20Y = CalculateDataStadistics.CalculaCagr(datum, last20YearsData);
 
+                    startDate = lastDate.AddYears(-10);
+
+                    var last10YearsData = historical
+                        .Where(h => h.Date >= startDate && h.Date <= lastDate)
+                        .OrderBy(h => h.Date)
+                        .ToList();
+
+                    double? cagr10Y = CalculateDataStadistics.CalculaCagr(datum, last10YearsData);
                     await _dataStadisticService.CreateOrUpdate(new DataStadistic
                     {
                         DataId = datum.DataId,
-                        Cagr20y = (float?)cagr
+                        Cagr20y = (float?)cagr20Y,
+                        Cagr10y = (float?)cagr10Y,
                     });
                 }
                 catch (Exception)
