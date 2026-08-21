@@ -118,31 +118,17 @@ namespace FinPredictCore.Jobs
 
                     var yearlySeries = historical
                         .Where(h => h.Date >= startDate && h.Date <= lastDate)
-                        .GroupBy(h => h.Date.Year)
-                        .Select(g => g.OrderByDescending(h => h.Date).First())
-                        .OrderBy(h => h.Date)
                         .ToList();
 
+                    yearlySeries = CalculateDataStadistics.GetAnnualHistoricalValues(yearlySeries);
                     if (yearlySeries.Count < 2)
                     {
                         continue;
-                    }
-
-                    var allReturns = new List<double>();
-                    for (var i = 1; i < yearlySeries.Count; i++)
+                    }                    if (yearlySeries.Count < 2)
                     {
-                        var previousValue = yearlySeries[i - 1].Value;
-                        var currentValue = yearlySeries[i].Value;
-
-                        if (previousValue <= 0 || currentValue <= 0)
-                        {
-                            continue;
-                        }
-
-                        var returnValue = (double)currentValue / previousValue - 1.0;
-                        allReturns.Add(returnValue);
-                    }
-
+                        continue;
+                    }                    
+                    var allReturns = CalculateDataStadistics.BuildLogReturns(datum, yearlySeries);
                     if (allReturns.Count < 2)
                     {
                         continue;
@@ -200,7 +186,7 @@ namespace FinPredictCore.Jobs
 
 
                 Console.WriteLine($"Inflación mitja darrers 20 anys: {inflactionAvg20Y}");
-                inflactionAvg20Y = CalculateDataStadistics.ToDecimal(inflactionAvg20Y ?? 0); // Convertir a factor (1 + tasa de inflación)   
+                inflactionAvg20Y = CalculateDataStadistics.ToDecimal(inflactionAvg20Y ?? 0); 
 
 
                 Console.WriteLine("[4] Obteniendo lista de activos...");
@@ -233,6 +219,7 @@ namespace FinPredictCore.Jobs
                         var yearlySeries = historical
                             .Where(h => h.Date >= startDate && h.Date <= lastDate)
                             .ToList();
+
 
                         var sortino = CalculateDataStadistics.CalculaSortino(datum, yearlySeries, inflactionAvg20Y ?? 0);
 
@@ -344,7 +331,7 @@ namespace FinPredictCore.Jobs
             {
                 var datums = _dataService
                     .GetAllDatums()
-                    .Where(d => !getExcludeDatumIds().Contains(d.DataId))
+                    .Where(d => !getExcludeDatumIds().Contains(d.DataId) && d.DataId != DataUtil.BITCOIN)
                     .ToList();
 
                 Console.WriteLine($"[1] Total de activos a procesar: {datums.Count}");

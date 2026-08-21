@@ -269,6 +269,7 @@ namespace FinPredictCore.Jobs
 
 		#endregion
 
+
 		private async Task CalculateSortino()
 		{
 			var datums = _dataService.GetAllDatums().ToList();
@@ -276,7 +277,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var datum in datums)
 			{
-				if (datum.DataId == 14 || datum.DataId == 15 || datum.DataId == 17)
+				if (datum.DataId == DataUtil.INFLATION || datum.DataId == DataUtil.UNEMPLOYMENT || datum.DataId == DataUtil.DEBT_GDP || datum.DataId == DataUtil.M2)
 				{
 					Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: No se calculará Sortino.");
 					continue;
@@ -331,13 +332,13 @@ namespace FinPredictCore.Jobs
 			return downsideDeviation > 0 ? (averageExcessReturn - targetReturn) / downsideDeviation : double.NaN;
 		}
 
-        private static List<HistoricalDatum> GetAnnualHistoricalValues(List<HistoricalDatum> historical) => historical
+        public static List<HistoricalDatum> GetAnnualHistoricalValues(List<HistoricalDatum> historical) => historical
                 .GroupBy(h => h.Date.Year)
                 .Select(group => group.OrderByDescending(h => h.Date).First())
                 .OrderBy(h => h.Date)
                 .ToList();
 
-        private static List<double> BuildLogReturns(Datum datum, List<HistoricalDatum> annualHistorical)
+        public static List<double> BuildLogReturns(Datum datum, List<HistoricalDatum> annualHistorical)
 		{
 			var values = annualHistorical.Select(h => (double)h.Value).ToList();
 
@@ -345,8 +346,10 @@ namespace FinPredictCore.Jobs
 			{
 				return LogReturnsFromIndex(values);
 			}
-
-			return LogReturnsFromRate(values);
+			if (datum.DataId == DataUtil.SP_500_TR)
+				return LogReturnsFromAnnualReturn(values);
+			else
+				return LogReturnsFromRate(values);
 		}
 
 		private static List<double> LogReturnsFromIndex(IReadOnlyList<double> values)
@@ -372,12 +375,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var value in values)
 			{
-				if (value <= -1)
-				{
-					continue;
-				}
-
-				results.Add(Math.Log(1 + value));
+				results.Add(Math.Log(ToFactorIncremento(value)));
 			}
 
 			return results;
