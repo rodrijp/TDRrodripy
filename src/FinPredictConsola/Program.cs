@@ -40,6 +40,10 @@ using (var scope = host.Services.CreateScope())
    var rScoreJob = scope.ServiceProvider.GetRequiredService<IRScoreEngineCalculate>();
    await rScoreJob.Do();
 
+  // Ejecutar cálculo del RAsignation y guardado en BD
+  var rAsignationJob = scope.ServiceProvider.GetRequiredService<IRAsignationCalculate>();
+  await rAsignationJob.Do();
+
   // CalculateNegVol30Y ya se ejecuta dentro de rScoreJob.Do()
 }
 

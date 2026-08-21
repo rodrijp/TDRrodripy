@@ -21,5 +21,6 @@ namespace FinPredictCore.Service.Data
         public const int M2 = 17;
         public const int TREASURY_30Y_FRED = 18;
         public const int TREASURY_10Y_FRED = 19;
+        public const int BITCOIN = 20;
     }
 }

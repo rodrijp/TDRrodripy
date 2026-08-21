@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICreateDataRelation, CreateDataRelation>();
         services.AddScoped<ICalculateDataStadistics, CalculateDataStadistics>();
         services.AddScoped<IRScoreEngineCalculate, RScoreEngineCalculate>();
+        services.AddScoped<IRAsignationCalculate, RAsignationCalculate>();
 
         return services;
     }
