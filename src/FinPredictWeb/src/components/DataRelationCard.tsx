@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api, type DataRelation } from '../api/client';
+import { DataRelationChart } from './DataRelationChart';
 
 interface DataRelationCardProps {
   leftDataId: number | null;
   rightDataId: number | null;
+  leftDataName?: string | null;
+  rightDataName?: string | null;
 }
 
 const formatValue = (value: number | null | undefined) =>
@@ -12,6 +15,8 @@ const formatValue = (value: number | null | undefined) =>
 export const DataRelationCard: React.FC<DataRelationCardProps> = ({
   leftDataId,
   rightDataId,
+  leftDataName,
+  rightDataName,
 }) => {
   const [relation, setRelation] = useState<DataRelation | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,29 +68,40 @@ export const DataRelationCard: React.FC<DataRelationCardProps> = ({
     <section className="data-relation-card">
       {leftDataId == null || rightDataId == null ? (
         <p>Selecciona ambos activos para ver su relación.</p>
-      ) : loading ? (
-        <p>Cargando relación entre {leftDataId} y {rightDataId}...</p>
-      ) : error ? (
-        <p className="data-relation-card-error">Error: {error}</p>
-      ) : relation ? (
-        <dl>
-          <div className="relation-row">
-            <dt>Covariancia</dt>
-            <dd>{formatValue(relation.covariance)}</dd>
-          </div>
-
-          <div className="relation-row">
-            <dt>Correlacion</dt>
-            <dd>{formatValue(relation.correlation)}</dd>
-          </div>
-
-          <div className="relation-row">
-            <dt>Correlacion Logaritmica</dt>
-            <dd>{formatValue(relation.correlationLog)}</dd>
-          </div>
-        </dl>
       ) : (
-        <p>No se encontró información de relación para los activos seleccionados.</p>
+        <>
+          <DataRelationChart
+            leftDataId={leftDataId}
+            rightDataId={rightDataId}
+            leftDataName={leftDataName}
+            rightDataName={rightDataName}
+          />
+
+          {loading ? (
+            <p>Cargando relación entre {leftDataId} y {rightDataId}...</p>
+          ) : error ? (
+            <p className="data-relation-card-error">Error: {error}</p>
+          ) : relation ? (
+            <dl>
+              <div className="relation-row">
+                <dt>Covariancia</dt>
+                <dd>{formatValue(relation.covariance)}</dd>
+              </div>
+
+              <div className="relation-row">
+                <dt>Correlacion</dt>
+                <dd>{formatValue(relation.correlation)}</dd>
+              </div>
+
+              <div className="relation-row">
+                <dt>Correlacion Logaritmica</dt>
+                <dd>{formatValue(relation.correlationLog)}</dd>
+              </div>
+            </dl>
+          ) : (
+            <p>No se encontró información de relación para los activos seleccionados.</p>
+          )}
+        </>
       )}
     </section>
   );
