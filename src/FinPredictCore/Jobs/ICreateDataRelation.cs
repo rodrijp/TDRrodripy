@@ -13,6 +13,6 @@ namespace FinPredictCore.Jobs
         /// Ejecuta la operación de creación de la relación de datos.
         /// </summary>
         Task Do();
-        Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type, int year = 0);
+        Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type, int year = 0, System.DateOnly? maxDate = null);
     }
 }

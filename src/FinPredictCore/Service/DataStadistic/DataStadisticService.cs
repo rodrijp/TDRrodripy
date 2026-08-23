@@ -69,6 +69,21 @@ public class DataStadisticService : IDataStadisticService
                     existing.CorrelationGen30y = model.CorrelationGen30y;
                 }
 
+                if (model.Rscore.HasValue)
+                {
+                    existing.Rscore = model.Rscore;
+                }
+
+                if (model.Cagr10y.HasValue)
+                {
+                    existing.Cagr10y = model.Cagr10y;
+                }
+
+                if (model.Rasignation.HasValue)
+                {
+                    existing.Rasignation = model.Rasignation;
+                }
+
                 await _context.SaveChangesAsync();
                 return existing;
             }
@@ -83,9 +98,6 @@ public class DataStadisticService : IDataStadisticService
         }
     }
 
-    public async Task<DataStadisticModel?> GetByDataId(short dataId)
-    {
-        return await _context.DataStadistics
+    public async Task<DataStadisticModel?> GetByDataId(short dataId) => await _context.DataStadistics
             .FirstOrDefaultAsync(x => x.DataId == dataId);
-    }
 }

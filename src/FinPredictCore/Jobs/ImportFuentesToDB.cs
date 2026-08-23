@@ -23,13 +23,10 @@ public class ImportFuentesToDB : IImportFuentesToDB
         _dataService = dataService;
     }
 
-    public void Do()
-    {
+    public void Do() =>
         //ImportFuenteMacrotrendsToDB();
         //ImportFuenteSlickchartsToDB();
         ImportFuenteStLouisToDB();
-        
-    }
 
     private void ImportFuenteMacrotrendsToDB()
     {
@@ -253,22 +250,21 @@ public class ImportFuentesToDB : IImportFuentesToDB
             var valorTexto = partes[1].Trim().Trim('"');
 
             DateOnly fecha;
-            var parsed = false;
-
+            
             if (int.TryParse(fechaTexto, out var yearOnly))
             {
                 fecha = new DateOnly(yearOnly, 12, 31);
-                parsed = true;
+                
             }
             else if (DateTime.TryParseExact(fechaTexto, new[] { "yyyy-MM-dd", "MM/dd/yyyy", "M/d/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
             {
                 fecha = DateOnly.FromDateTime(dt);
-                parsed = true;
+                
             }
             else if (DateTime.TryParse(fechaTexto, CultureInfo.InvariantCulture, DateTimeStyles.None, out dt))
             {
                 fecha = DateOnly.FromDateTime(dt);
-                parsed = true;
+                
             }
             else
             {

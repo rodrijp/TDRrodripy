@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICreateDataRelation, CreateDataRelation>();
         services.AddScoped<ICalculateDataStadistics, CalculateDataStadistics>();
         services.AddScoped<IRScoreEngineCalculate, RScoreEngineCalculate>();
+        services.AddScoped<IRAsignationCalculate, RAsignationCalculate>();
 
         return services;
     }
@@ -64,17 +65,14 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Método de extensión para crear un HostBuilder con configuración compartida
     /// </summary>
-    public static IHostBuilder CreateSharedHostBuilder(string[] args)
-    {
-        return Host.CreateDefaultBuilder(args)
+    public static IHostBuilder CreateSharedHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
             .ConfigureServices((context, services) =>
             {
                 // Agregar servicios compartidos
                 services.AddSharedServices(context.Configuration);
                 services.AddSharedLogging();
-                
+
                 // Aquí puedes agregar más configuraciones compartidas
                 // como configuración de validación, AutoMapper, etc.
             });
-    }
 }

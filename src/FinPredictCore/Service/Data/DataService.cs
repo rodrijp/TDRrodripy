@@ -13,19 +13,13 @@ public class DataService : IDataService
         _context = context;
     }
 
-    public IEnumerable<Datum> GetAllDatums()
-    {
-        return _context.Data
+    public IEnumerable<Datum> GetAllDatums() => _context.Data
             .AsNoTracking()
             .ToList();
-    }
-    public IEnumerable<Datum> GetAllDatumsBySource(int sourceId)
-    {
-        return _context.Data
+    public IEnumerable<Datum> GetAllDatumsBySource(int sourceId) => _context.Data
             .AsNoTracking()
             .Where(d => d.SourceId == sourceId)
             .ToList();
-    }
 
 
 }

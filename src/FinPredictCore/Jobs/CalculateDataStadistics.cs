@@ -134,7 +134,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var yearlyRate in annualHistorical)
 			{
-				var factor = ToFactor(yearlyRate.Value);
+				var factor = ToFactorIncremento(yearlyRate.Value);
 				if (factor <= 0)
 				{
 					accumulatedValue = double.NaN;
@@ -269,6 +269,7 @@ namespace FinPredictCore.Jobs
 
 		#endregion
 
+
 		private async Task CalculateSortino()
 		{
 			var datums = _dataService.GetAllDatums().ToList();
@@ -276,7 +277,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var datum in datums)
 			{
-				if (datum.DataId == 14 || datum.DataId == 15 || datum.DataId == 17)
+				if (datum.DataId == DataUtil.INFLATION || datum.DataId == DataUtil.UNEMPLOYMENT || datum.DataId == DataUtil.DEBT_GDP || datum.DataId == DataUtil.M2)
 				{
 					Console.WriteLine($"  -> {datum.DataId} {datum.DataName}: No se calculará Sortino.");
 					continue;
@@ -328,19 +329,16 @@ namespace FinPredictCore.Jobs
 
 			var downsideDeviation = Math.Sqrt(downsideReturns.Sum(value => value * value) / returns.Count);
 			var averageExcessReturn = excessReturns.Average();
-			return downsideDeviation > 0 ? averageExcessReturn / downsideDeviation : double.NaN;
+			return downsideDeviation > 0 ? (averageExcessReturn - targetReturn) / downsideDeviation : double.NaN;
 		}
 
-		private static List<HistoricalDatum> GetAnnualHistoricalValues(List<HistoricalDatum> historical)
-		{
-			return historical
-				.GroupBy(h => h.Date.Year)
-				.Select(group => group.OrderByDescending(h => h.Date).First())
-				.OrderBy(h => h.Date)
-				.ToList();
-		}
+        public static List<HistoricalDatum> GetAnnualHistoricalValues(List<HistoricalDatum> historical) => historical
+                .GroupBy(h => h.Date.Year)
+                .Select(group => group.OrderByDescending(h => h.Date).First())
+                .OrderBy(h => h.Date)
+                .ToList();
 
-		private static List<double> BuildLogReturns(Datum datum, List<HistoricalDatum> annualHistorical)
+        public static List<double> BuildLogReturns(Datum datum, List<HistoricalDatum> annualHistorical)
 		{
 			var values = annualHistorical.Select(h => (double)h.Value).ToList();
 
@@ -348,8 +346,10 @@ namespace FinPredictCore.Jobs
 			{
 				return LogReturnsFromIndex(values);
 			}
-
-			return LogReturnsFromRate(values);
+			if (datum.DataId == DataUtil.SP_500_TR)
+				return LogReturnsFromAnnualReturn(values);
+			else
+				return LogReturnsFromRate(values);
 		}
 
 		private static List<double> LogReturnsFromIndex(IReadOnlyList<double> values)
@@ -375,12 +375,7 @@ namespace FinPredictCore.Jobs
 
 			foreach (var value in values)
 			{
-				if (value <= -1)
-				{
-					continue;
-				}
-
-				results.Add(Math.Log(1 + value));
+				results.Add(Math.Log(ToFactorIncremento(value)));
 			}
 
 			return results;
@@ -392,8 +387,8 @@ namespace FinPredictCore.Jobs
 
 			for (var i = 1; i < values.Count; i++)
 			{
-				var factorPrev = ToFactor(values[i - 1]);
-				var factorCurr = ToFactor(values[i]);
+				var factorPrev = ToFactorIncremento(values[i - 1]);
+				var factorCurr = ToFactorIncremento(values[i]);
 				if (factorPrev <= 0 || factorCurr <= 0)
 				{
 					continue;  //Tasa mas de 100% negativa.
@@ -435,8 +430,18 @@ namespace FinPredictCore.Jobs
 			return CalculateHistoricalVolatility(residuals);
 		}
 
-		private static double ToFactor(double v)
-		{
+        public static double ToFactorIncremento(double v) =>
+            // - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
+            // - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
+            // Esto evita convertir 1 (1%) a 100% y obtener factor cero.
+            // if (Math.Abs(v) < 1.0)
+            // {
+            // 	return 1.0 + v;
+            // }
+
+            1.0 + v / 100.0;
+
+		public static double ToDecimal(double v) =>
 			// - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
 			// - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
 			// Esto evita convertir 1 (1%) a 100% y obtener factor cero.
@@ -445,8 +450,7 @@ namespace FinPredictCore.Jobs
 			// 	return 1.0 + v;
 			// }
 
-			return 1.0 + v / 100.0;
-		}
-	}
+			v / 100.0;
+    }
 }
 

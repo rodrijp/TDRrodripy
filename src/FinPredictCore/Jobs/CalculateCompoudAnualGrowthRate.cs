@@ -128,18 +128,16 @@ namespace FinPredictCore.Jobs
 					Console.WriteLine("Cálculo de CAGR finalizado.");
 		}
 
-		private static double ToFactor(double v)
-		{
-			// - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
-			// - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
-			// Esto evita convertir 1 (1%) a 100% y obtener factor cero.
-//			if (Math.Abs(v) < 1.0)
-//			{
-//				return 1.0 + v;
-//			}
+        private static double ToFactor(double v) =>
+            // - Si el valor está en formato decimal (ej. 0.20 = 20%), usar 1 + v.
+            // - Si el valor está en formato porcentaje (ej. 20 = 20%), usar 1 + v/100.
+            // Esto evita convertir 1 (1%) a 100% y obtener factor cero.
+            //			if (Math.Abs(v) < 1.0)
+            //			{
+            //				return 1.0 + v;
+            //			}
 
-			return 1.0 + v / 100.0;
-		}
-	}
+            1.0 + v / 100.0;
+    }
 }
 
