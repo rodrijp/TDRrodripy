@@ -84,9 +84,13 @@ namespace FinPredictCore.Jobs
             Console.WriteLine("Finalizado el cálculo de correlaciones.");
         }
 
-        private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum,  TypeDatum type, int year = 0)
+        private async Task<IEnumerable<(DateOnly Date, float Value)>> GetSerie(Datum datum,  TypeDatum type, int year = 0, DateOnly? maxDate = null)
         {
             var data = await _historicalDataService.GetHistoricalDataByData(datum.DataId);
+            if (maxDate.HasValue)
+            {
+                data = data.Where(h => h.Date <= maxDate.Value).ToList();
+            }
             if (year > 0)
             {
                 var lastDate = data.Max(h => h.Date);
@@ -132,13 +136,13 @@ namespace FinPredictCore.Jobs
 
 
 
-        public async Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type, int year = 0)
+        public async Task<double> CalculaCorrelación(Datum datum1, Datum datum2, TypeDatum type, int year = 0, DateOnly? maxDate = null)
         {
 //            if (datum1.DataId == datum2.DataId)
 //                throw new ArgumentException("Los DataId no deben ser iguales.", nameof(datum2));
 
-            var s1 = await GetSerie(datum1, type, year);
-            var s2 = await GetSerie(datum2, type, year);
+            var s1 = await GetSerie(datum1, type, year, maxDate);
+            var s2 = await GetSerie(datum2, type, year, maxDate);
 
             var (start, end, commonDates, x, y) = AlignAndExtractCommon(s1, s2);
 

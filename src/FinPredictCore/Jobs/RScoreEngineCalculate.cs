@@ -41,6 +41,10 @@ namespace FinPredictCore.Jobs
 
         private HashSet<int> getExcludeDatumIds() => new HashSet<int> { DataUtil.INFLATION, DataUtil.UNEMPLOYMENT, DataUtil.DEBT_GDP, DataUtil.M2, DataUtil.DOW_JONES, DataUtil.TREASURY_30Y, DataUtil.TREASURY_10Y };
 
+        private static readonly DateOnly LastAllowedDate = new DateOnly(2025, 12, 31);
+
+        private static DateOnly CapLastDate(DateOnly date) => date > LastAllowedDate ? LastAllowedDate : date;
+
         public async Task CalculateCAGR()
         {
             var datums = _dataService
@@ -61,7 +65,7 @@ namespace FinPredictCore.Jobs
                         continue;
                     }
 
-                    var lastDate = historical.Max(h => h.Date);
+                    var lastDate = CapLastDate(historical.Max(h => h.Date));
                     var startDate = lastDate.AddYears(-20);
 
                     var last20YearsData = historical
@@ -113,7 +117,7 @@ namespace FinPredictCore.Jobs
                         continue;
                     }
 
-                    var lastDate = historical.Max(h => h.Date);
+                    var lastDate = CapLastDate(historical.Max(h => h.Date));
                     var startDate = lastDate.AddYears(-30);
 
                     var yearlySeries = historical
@@ -175,7 +179,7 @@ namespace FinPredictCore.Jobs
                     .OrderBy(h => h.Date)
                     .ToList();
 
-                var lastInflationDate = inflationHistorical.Max(h => h.Date);
+                var lastInflationDate = CapLastDate(inflationHistorical.Max(h => h.Date));
                 var inflationStartDate = lastInflationDate.AddYears(-20);
                 var last20YearsInflation = inflationHistorical
                     .Where(h => h.Date >= inflationStartDate && h.Date <= lastInflationDate)
@@ -212,7 +216,7 @@ namespace FinPredictCore.Jobs
                             continue;
                         }
 
-                        var lastDate = historical.Max(h => h.Date);
+                        var lastDate = CapLastDate(historical.Max(h => h.Date));
                         var startDate = lastDate.AddYears(-20);
 
                         // Filtrar datos últimos 20 años y agrupar por año
@@ -280,7 +284,7 @@ namespace FinPredictCore.Jobs
 
                             try
                             {
-                                var correlation = await _createDataRelation.CalculaCorrelación(datum, other, TypeDatum.Arithmetic, year: 30);
+                                var correlation = await _createDataRelation.CalculaCorrelación(datum, other, TypeDatum.Arithmetic, year: 30, maxDate: LastAllowedDate);
                                 if (!double.IsNaN(correlation))
                                 {
                                     correlations.Add(correlation);
