@@ -7,6 +7,8 @@ import './App.css';
 function App() {
   const [leftDataId, setLeftDataId] = useState<number | null>(null);
   const [rightDataId, setRightDataId] = useState<number | null>(null);
+  const [leftDataName, setLeftDataName] = useState<string | null>(null);
+  const [rightDataName, setRightDataName] = useState<string | null>(null);
 
   return (
     <main className="app-shell container-fluid py-4">
@@ -21,6 +23,7 @@ function App() {
             <DatumSelector
               selectedDataId={leftDataId}
               onDataIdChange={(dataId) => setLeftDataId(dataId)}
+              onDataNameChange={setLeftDataName}
               label="Selecciona un activo:"
             />
 
@@ -37,7 +40,12 @@ function App() {
               <h2>Relación entre activos</h2>
             </div>
 
-            <DataRelationCard leftDataId={leftDataId} rightDataId={rightDataId} />
+            <DataRelationCard
+              leftDataId={leftDataId}
+              rightDataId={rightDataId}
+              leftDataName={leftDataName}
+              rightDataName={rightDataName}
+            />
           </div>
         </section>
 
@@ -51,6 +59,7 @@ function App() {
             <DatumSelector
               selectedDataId={rightDataId}
               onDataIdChange={(dataId) => setRightDataId(dataId)}
+              onDataNameChange={setRightDataName}
               label="Selecciona un activo:"
             />
 

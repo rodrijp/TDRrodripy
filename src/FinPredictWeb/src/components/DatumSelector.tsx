@@ -8,12 +8,14 @@ type Datum = components['schemas']['Datum'];
 interface DatumSelectorProps {
   selectedDataId?: number | null;
   onDataIdChange: (dataId: number | null) => void;
+  onDataNameChange?: (dataName: string | null) => void;
   label?: string;
 }
 
 export const DatumSelector: React.FC<DatumSelectorProps> = ({
   selectedDataId = null,
   onDataIdChange,
+  onDataNameChange,
   label = 'Seleccionar Activo:',
 }) => {
   const [datums, setDatums] = useState<Datum[]>([]);
@@ -62,6 +64,7 @@ export const DatumSelector: React.FC<DatumSelectorProps> = ({
               const value = e.target.value;
               const nextDataId = value ? parseInt(value, 10) : null;
               onDataIdChange(nextDataId);
+              onDataNameChange?.(datums.find((datum) => datum.dataId === nextDataId)?.dataName ?? null);
               if (nextDataId == null) {
                 setIsPopupOpen(false);
               }
