@@ -397,16 +397,13 @@ namespace FinPredictCore.Jobs
 
             if (floored.Count > 0)
             {
-                var others = _assets.Except(floored).ToList();
+                var others = Top.Except(floored).ToList();
+                var third = totalNegative / 3;
 
-                if (others.Count > 0)
+                foreach (var asset in others)
                 {
-                    var share = totalNegative / others.Count;
-
-                    foreach (var asset in others)
-                    {
-                        asset.RAsignation += share;
-                    }
+                    asset.RAsignation += third;
+                    Console.WriteLine($"  {asset.Name,-20} | {third:F4} (tercio del excedente)");
                 }
             }
 
